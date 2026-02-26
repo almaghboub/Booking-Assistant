@@ -1,0 +1,227 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, ClipboardList, Clock, Edit2, Trash2, MoreHorizontal, DollarSign } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import type { Service, Doctor } from "@shared/schema";
+
+const serviceFormSchema = z.object({
+  name: z.string().min(2, "Name is required"),
+  duration: z.coerce.number().min(5).max(480),
+  price: z.string().optional(),
+  bufferTime: z.coerce.number().min(0).default(0),
+  doctorId: z.string().optional(),
+});
+type ServiceForm = z.infer<typeof serviceFormSchema>;
+
+const CLINIC_ID = "clinic-1";
+
+function ServiceFormDialog({ service, doctors, onClose }: { service?: Service; doctors: Doctor[]; onClose: () => void }) {
+  const { toast } = useToast();
+  const form = useForm<ServiceForm>({
+    resolver: zodResolver(serviceFormSchema),
+    defaultValues: {
+      name: service?.name ?? "",
+      duration: service?.duration ?? 30,
+      price: service?.price ? String(service.price) : "",
+      bufferTime: service?.bufferTime ?? 0,
+      doctorId: service?.doctorId ?? "all",
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: ServiceForm) =>
+      apiRequest("POST", "/api/admin/services", {
+        ...data,
+        clinicId: CLINIC_ID,
+        doctorId: data.doctorId === "all" ? null : data.doctorId,
+        price: data.price || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      toast({ title: "Service added" });
+      onClose();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: ServiceForm) =>
+      apiRequest("PATCH", `/api/admin/services/${service!.id}`, {
+        ...data,
+        doctorId: data.doctorId === "all" ? null : data.doctorId,
+        price: data.price || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      toast({ title: "Service updated" });
+      onClose();
+    },
+  });
+
+  const onSubmit = (data: ServiceForm) => {
+    if (service) updateMutation.mutate(data);
+    else createMutation.mutate(data);
+  };
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
+      <div className="space-y-1.5">
+        <Label>Service Name</Label>
+        <Input placeholder="General Checkup" {...form.register("name")} data-testid="input-service-name" />
+        {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label>Duration (minutes)</Label>
+          <Input type="number" min="5" placeholder="30" {...form.register("duration")} data-testid="input-service-duration" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Buffer Time (min)</Label>
+          <Input type="number" min="0" placeholder="0" {...form.register("bufferTime")} data-testid="input-service-buffer" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Price (optional)</Label>
+          <Input placeholder="50.00" {...form.register("price")} data-testid="input-service-price" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Assigned Doctor</Label>
+          <Select
+            defaultValue={service?.doctorId ?? "all"}
+            onValueChange={v => form.setValue("doctorId", v)}
+          >
+            <SelectTrigger data-testid="select-service-doctor">
+              <SelectValue placeholder="All doctors" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Doctors</SelectItem>
+              {doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="flex justify-end gap-3 pt-2">
+        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button type="submit" disabled={isPending} data-testid="button-save-service">
+          {isPending ? "Saving..." : service ? "Update Service" : "Add Service"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export default function AdminServices() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState<Service | undefined>();
+  const { toast } = useToast();
+
+  const { data: services = [], isLoading } = useQuery<Service[]>({ queryKey: ["/api/admin/services"] });
+  const { data: doctors = [] } = useQuery<Doctor[]>({ queryKey: ["/api/admin/doctors"] });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/admin/services/${id}`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      toast({ title: "Service removed" });
+    },
+  });
+
+  const openAdd = () => { setEditingService(undefined); setDialogOpen(true); };
+  const openEdit = (svc: Service) => { setEditingService(svc); setDialogOpen(true); };
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Services</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage the services offered at your clinic</p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={openAdd} data-testid="button-add-service">
+              <Plus className="w-4 h-4 mr-2" />Add Service
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingService ? "Edit Service" : "Add New Service"}</DialogTitle>
+            </DialogHeader>
+            <ServiceFormDialog service={editingService} doctors={doctors} onClose={() => setDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1,2,3].map(i => <Skeleton key={i} className="h-32" />)}
+        </div>
+      ) : services.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <ClipboardList className="w-12 h-12 text-muted-foreground/50 mb-4" />
+            <p className="text-sm font-medium text-muted-foreground">No services yet</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">Add your first service</p>
+            <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-2" />Add Service</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {services.map((svc) => (
+            <Card key={svc.id} data-testid={`card-service-${svc.id}`}>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                    <ClipboardList className="w-4 h-4 text-primary" />
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" data-testid={`button-service-actions-${svc.id}`}>
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(svc)}><Edit2 className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => deleteMutation.mutate(svc.id)} className="text-destructive">
+                        <Trash2 className="w-4 h-4 mr-2" />Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <p className="font-semibold text-foreground mt-3">{svc.name}</p>
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />{svc.duration} min
+                  </span>
+                  {svc.bufferTime && svc.bufferTime > 0 ? (
+                    <span className="text-xs text-muted-foreground">+{svc.bufferTime} min buffer</span>
+                  ) : null}
+                  {svc.price && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />{svc.price}
+                    </span>
+                  )}
+                </div>
+                {svc.doctorId && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Assigned: {doctors.find(d => d.id === svc.doctorId)?.name ?? "Unknown"}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
