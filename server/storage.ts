@@ -172,14 +172,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAppointmentsByClinic(clinicId: string, filters?: { status?: string; date?: string }) {
-    let query = db.select().from(appointments).where(eq(appointments.clinicId, clinicId)).$dynamic();
-    if (filters?.status) {
-      query = query.where(and(eq(appointments.clinicId, clinicId), eq(appointments.status, filters.status)));
-    }
-    if (filters?.date) {
-      query = query.where(and(eq(appointments.clinicId, clinicId), eq(appointments.date, filters.date)));
-    }
-    return query.orderBy(appointments.date, appointments.time);
+    const conds: any[] = [eq(appointments.clinicId, clinicId)];
+    if (filters?.status) conds.push(eq(appointments.status, filters.status));
+    if (filters?.date) conds.push(eq(appointments.date, filters.date));
+    return db.select().from(appointments).where(and(...conds)).orderBy(appointments.date, appointments.time);
   }
 
   async getAppointmentsByDoctor(doctorId: string, filters?: { status?: string; date?: string }) {
