@@ -1,9 +1,10 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getQueryFn } from "@/lib/queryClient";
 
 export function useAuth() {
   const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
   });
 
