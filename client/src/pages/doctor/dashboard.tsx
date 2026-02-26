@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, CheckCircle, XCircle, Bell, User, Phone, AlertCircle } from "lucide-react";
+import { Calendar, Clock, CheckCircle, XCircle, Bell, User, Phone, AlertCircle, Link2, Copy, Check, Share2 } from "lucide-react";
 import { format, addDays, startOfWeek } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,6 +24,23 @@ export default function DoctorDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [arrivedDialogOpen, setArrivedDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const bookingLink = user?.doctorId
+    ? `${window.location.origin}/book?doctor=${user.doctorId}`
+    : null;
+
+  const handleCopyLink = async () => {
+    if (!bookingLink) return;
+    try {
+      await navigator.clipboard.writeText(bookingLink);
+      setCopied(true);
+      toast({ title: "Link copied!", description: "Share this link with your patients." });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Copy failed", description: "Please copy the link manually.", variant: "destructive" });
+    }
+  };
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -73,6 +90,40 @@ export default function DoctorDashboard() {
           Doctor Arrived
         </Button>
       </div>
+
+      {/* Shareable Booking Link */}
+      {bookingLink && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                  <Share2 className="w-4 h-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Your Booking Link</p>
+                  <p className="text-xs text-muted-foreground">Share with patients — they'll go straight to your booking page</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0 px-3 py-2 rounded-md bg-background border border-border text-xs text-muted-foreground truncate font-mono" data-testid="text-booking-link">
+                  {bookingLink}
+                </div>
+                <Button
+                  size="sm"
+                  variant={copied ? "secondary" : "default"}
+                  onClick={handleCopyLink}
+                  className="shrink-0 gap-1.5"
+                  data-testid="button-copy-booking-link"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? "Copied!" : "Copy Link"}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Today's Stats */}
       <div className="grid grid-cols-3 gap-4">

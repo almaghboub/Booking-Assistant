@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 
+import HomePage from "@/pages/home";
 import LoginPage from "@/pages/login";
 import BookingPage from "@/pages/book";
 import AdminDashboard from "@/pages/admin/dashboard";
@@ -83,9 +84,9 @@ function HomeRedirect() {
       <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );
-  if (!user) return <Redirect to="/login" />;
-  if (user.role === "doctor") return <Redirect to="/doctor" />;
-  return <Redirect to="/admin" />;
+  if (user?.role === "doctor") return <Redirect to="/doctor" />;
+  if (user?.role === "clinic_admin") return <Redirect to="/admin" />;
+  return <HomePage />;
 }
 
 function Router() {

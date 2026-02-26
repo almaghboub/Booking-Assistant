@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useSearch, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, ChevronRight, ChevronLeft, Clock, CheckCircle2, Calendar, User, Phone } from "lucide-react";
+import { Stethoscope, ChevronRight, ChevronLeft, Clock, CheckCircle2, Calendar, User, Phone, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { format, addDays } from "date-fns";
 import type { Doctor, Service } from "@shared/schema";
@@ -53,13 +54,16 @@ function TimeSlotGrid({ slots, selected, onSelect }: {
 }
 
 export default function BookingPage() {
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const preselectedDoctorId = params.get("doctor");
+
   const [step, setStep] = useState(0);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [bookedAppointment, setBookedAppointment] = useState<any>(null);
 
   const form = useForm<PatientForm>({
     resolver: zodResolver(patientSchema),
@@ -70,6 +74,17 @@ export default function BookingPage() {
     queryKey: ["/api/public/doctors", CLINIC_ID],
     queryFn: () => fetch(`/api/public/doctors?clinicId=${CLINIC_ID}`).then(r => r.json()),
   });
+
+  // Auto-select doctor from URL param once doctors are loaded
+  useEffect(() => {
+    if (preselectedDoctorId && doctors.length > 0 && !selectedDoctor) {
+      const doc = doctors.find(d => d.id === preselectedDoctorId);
+      if (doc) {
+        setSelectedDoctor(doc);
+        setStep(1);
+      }
+    }
+  }, [preselectedDoctorId, doctors]);
 
   const { data: services = [], isLoading: loadingServices } = useQuery<Service[]>({
     queryKey: ["/api/public/services", selectedDoctor?.id],
@@ -85,9 +100,7 @@ export default function BookingPage() {
 
   const bookMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/public/appointments", data),
-    onSuccess: async (res) => {
-      const body = await res.json();
-      setBookedAppointment(body);
+    onSuccess: async () => {
       setIsSuccess(true);
     },
   });
@@ -120,7 +133,7 @@ export default function BookingPage() {
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">Appointment Requested!</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Your appointment has been submitted and is pending confirmation.
+              Your appointment is pending confirmation. You'll receive a WhatsApp message shortly.
             </p>
             <div className="bg-muted rounded-lg p-4 text-left space-y-2 mb-6">
               <div className="flex justify-between text-sm">
@@ -140,24 +153,28 @@ export default function BookingPage() {
                 <span className="font-medium text-foreground">{selectedTime}</span>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              You will receive confirmation via WhatsApp at your provided number.
+            <p className="text-xs text-muted-foreground mb-4">
+              Reply <strong>YES</strong> to confirm or <strong>NO</strong> to cancel when you receive the WhatsApp message.
             </p>
-            <Button
-              className="mt-4 w-full"
-              onClick={() => {
-                setStep(0);
-                setSelectedDoctor(null);
-                setSelectedService(null);
-                setSelectedDate("");
-                setSelectedTime(null);
-                setIsSuccess(false);
-                form.reset();
-              }}
-              data-testid="button-book-another"
-            >
-              Book Another Appointment
-            </Button>
+            <div className="flex gap-3">
+              <Link href="/" className="flex-1">
+                <Button variant="outline" className="w-full">Back to Home</Button>
+              </Link>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  setStep(preselectedDoctorId ? 1 : 0);
+                  setSelectedService(null);
+                  setSelectedDate("");
+                  setSelectedTime(null);
+                  setIsSuccess(false);
+                  form.reset();
+                }}
+                data-testid="button-book-another"
+              >
+                Book Another
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -166,18 +183,30 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-            <Stethoscope className="w-4 h-4 text-primary-foreground" />
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link href="/">
+              <Button size="icon" variant="ghost" className="shrink-0">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
+              <Stethoscope className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground text-sm leading-tight">Rakaz Clinic</p>
+              {selectedDoctor && step > 0 ? (
+                <p className="text-xs text-muted-foreground">Booking with {selectedDoctor.name}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Online Appointment Booking</p>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="font-semibold text-foreground text-sm">Rakaz Clinic</h1>
-            <p className="text-xs text-muted-foreground">Online Appointment Booking</p>
-          </div>
-          <div className="ml-auto">
-            <a href="/login" className="text-xs text-primary hover:underline underline-offset-2">Staff Login</a>
-          </div>
+          <Link href="/login">
+            <span className="text-xs text-primary hover:underline underline-offset-2">Staff Login</span>
+          </Link>
         </div>
       </header>
 
@@ -219,9 +248,7 @@ export default function BookingPage() {
                     key={doc.id}
                     onClick={() => { setSelectedDoctor(doc); setStep(1); }}
                     data-testid={`card-doctor-${doc.id}`}
-                    className={`p-4 rounded-lg border cursor-pointer hover-elevate transition-colors ${
-                      selectedDoctor?.id === doc.id ? "border-primary bg-primary/5" : "border-border bg-card"
-                    }`}
+                    className="p-4 rounded-lg border border-border bg-card cursor-pointer hover-elevate transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
@@ -250,8 +277,23 @@ export default function BookingPage() {
         {/* Step 1: Choose Service */}
         {step === 1 && (
           <div>
+            {/* Doctor banner when pre-selected from link */}
+            {preselectedDoctorId && selectedDoctor && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 mb-5">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="font-bold text-primary text-sm">{selectedDoctor.name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{selectedDoctor.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedDoctor.specialty}</p>
+                </div>
+                <Badge variant="secondary" className="ml-auto text-xs">Selected</Badge>
+              </div>
+            )}
             <h2 className="text-xl font-bold text-foreground mb-1">Choose a Service</h2>
-            <p className="text-sm text-muted-foreground mb-6">Select the service with <span className="font-medium text-foreground">{selectedDoctor?.name}</span></p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Select the service with <span className="font-medium text-foreground">{selectedDoctor?.name}</span>
+            </p>
             {loadingServices ? (
               <div className="space-y-3">
                 {[1, 2].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />)}
@@ -263,9 +305,7 @@ export default function BookingPage() {
                     key={svc.id}
                     onClick={() => { setSelectedService(svc); setStep(2); }}
                     data-testid={`card-service-${svc.id}`}
-                    className={`p-4 rounded-lg border cursor-pointer hover-elevate transition-colors ${
-                      selectedService?.id === svc.id ? "border-primary bg-primary/5" : "border-border bg-card"
-                    }`}
+                    className="p-4 rounded-lg border border-border bg-card cursor-pointer hover-elevate transition-colors"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div>
@@ -288,9 +328,11 @@ export default function BookingPage() {
                 )}
               </div>
             )}
-            <Button variant="ghost" size="sm" className="mt-4" onClick={() => setStep(0)} data-testid="button-back-step1">
-              <ChevronLeft className="w-4 h-4 mr-1" />Back
-            </Button>
+            {!preselectedDoctorId && (
+              <Button variant="ghost" size="sm" className="mt-4" onClick={() => setStep(0)} data-testid="button-back-step1">
+                <ChevronLeft className="w-4 h-4 mr-1" />Back
+              </Button>
+            )}
           </div>
         )}
 
@@ -303,7 +345,7 @@ export default function BookingPage() {
             <div className="mb-6">
               <p className="text-sm font-medium text-foreground mb-3">Select a date</p>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-                {next7Days.slice(0, 14).map((date) => {
+                {next7Days.map((date) => {
                   const d = new Date(date + "T00:00:00");
                   return (
                     <button
@@ -363,13 +405,7 @@ export default function BookingPage() {
                 <Label htmlFor="patientName">Full Name</Label>
                 <div className="relative">
                   <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="patientName"
-                    className="pl-9"
-                    placeholder="Your full name"
-                    data-testid="input-patient-name"
-                    {...form.register("patientName")}
-                  />
+                  <Input id="patientName" className="pl-9" placeholder="Your full name" data-testid="input-patient-name" {...form.register("patientName")} />
                 </div>
                 {form.formState.errors.patientName && (
                   <p className="text-xs text-destructive">{form.formState.errors.patientName.message}</p>
@@ -379,13 +415,7 @@ export default function BookingPage() {
                 <Label htmlFor="patientPhone">Phone / WhatsApp Number</Label>
                 <div className="relative">
                   <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="patientPhone"
-                    className="pl-9"
-                    placeholder="+218 91 234 5678"
-                    data-testid="input-patient-phone"
-                    {...form.register("patientPhone")}
-                  />
+                  <Input id="patientPhone" className="pl-9" placeholder="+218 91 234 5678" data-testid="input-patient-phone" {...form.register("patientPhone")} />
                 </div>
                 {form.formState.errors.patientPhone && (
                   <p className="text-xs text-destructive">{form.formState.errors.patientPhone.message}</p>
@@ -393,12 +423,7 @@ export default function BookingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="notes">Notes (optional)</Label>
-                <Input
-                  id="notes"
-                  placeholder="Any special notes or requests"
-                  data-testid="input-notes"
-                  {...form.register("notes")}
-                />
+                <Input id="notes" placeholder="Any special notes or requests" data-testid="input-notes" {...form.register("notes")} />
               </div>
               <div className="flex items-center gap-3 pt-2">
                 <Button variant="ghost" size="sm" type="button" onClick={() => setStep(2)} data-testid="button-back-step3">
@@ -456,7 +481,7 @@ export default function BookingPage() {
 
             <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 mb-6">
               <p className="text-xs text-blue-700 dark:text-blue-300">
-                After booking, you'll receive a WhatsApp message to confirm your appointment. Reply YES to confirm or NO to cancel.
+                You'll receive a WhatsApp message to confirm your appointment. Reply <strong>YES</strong> to confirm or <strong>NO</strong> to cancel.
               </p>
             </div>
 
@@ -464,11 +489,7 @@ export default function BookingPage() {
               <Button variant="ghost" size="sm" onClick={() => setStep(3)} data-testid="button-back-step4">
                 <ChevronLeft className="w-4 h-4 mr-1" />Back
               </Button>
-              <Button
-                onClick={form.handleSubmit(handleBook)}
-                disabled={bookMutation.isPending}
-                data-testid="button-confirm-booking"
-              >
+              <Button onClick={form.handleSubmit(handleBook)} disabled={bookMutation.isPending} data-testid="button-confirm-booking">
                 {bookMutation.isPending ? "Booking..." : "Confirm Booking"}
               </Button>
             </div>
