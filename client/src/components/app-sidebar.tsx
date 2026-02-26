@@ -45,7 +45,7 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
   const [location, navigate] = useWouterLocation();
 
-  const items = user?.role === "doctor" ? doctorItems : adminItems;
+  const items = user?.role === "doctor" ? doctorItems : user?.role === "clinic_admin" ? adminItems : [];
 
   const handleLogout = async () => {
     await logout();
