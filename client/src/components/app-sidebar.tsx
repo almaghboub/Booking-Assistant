@@ -21,6 +21,7 @@ import {
   CalendarDays,
   ClipboardList,
   UserCheck,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const adminItems = [
   { title: "Services", url: "/admin/services", icon: ClipboardList },
   { title: "Patients", url: "/admin/patients", icon: Users },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 const doctorItems = [

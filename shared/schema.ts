@@ -33,6 +33,11 @@ export const doctors = pgTable("doctors", {
   workingHours: text("working_hours").default("09:00-17:00"),
   breakTime: text("break_time").default("13:00-14:00"),
   isActive: boolean("is_active").default(true),
+  // Google Calendar integration
+  googleCalendarId: text("google_calendar_id"),
+  googleAccessToken: text("google_access_token"),
+  googleRefreshToken: text("google_refresh_token"),
+  googleTokenExpiry: timestamp("google_token_expiry"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -72,6 +77,8 @@ export const appointments = pgTable("appointments", {
   status: text("status").notNull().default("pending_confirmation"),
   notes: text("notes"),
   confirmationTime: timestamp("confirmation_time"),
+  // Google Calendar event ID for sync/deletion
+  googleCalendarEventId: text("google_calendar_event_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -80,7 +87,7 @@ export const insertClinicSchema = createInsertSchema(clinics).omit({ id: true, c
 export const insertDoctorSchema = createInsertSchema(doctors).omit({ id: true, createdAt: true });
 export const insertServiceSchema = createInsertSchema(services).omit({ id: true, createdAt: true });
 export const insertPatientSchema = createInsertSchema(patients).omit({ id: true, createdAt: true });
-export const insertAppointmentSchema = createInsertSchema(appointments).omit({ id: true, createdAt: true, confirmationTime: true });
+export const insertAppointmentSchema = createInsertSchema(appointments).omit({ id: true, createdAt: true, confirmationTime: true, googleCalendarEventId: true });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;

@@ -17,6 +17,7 @@ import AdminDoctors from "@/pages/admin/doctors";
 import AdminServices from "@/pages/admin/services";
 import AdminPatients from "@/pages/admin/patients";
 import AdminAnalytics from "@/pages/admin/analytics";
+import AdminSettings from "@/pages/admin/settings";
 import DoctorDashboard from "@/pages/doctor/dashboard";
 import DoctorAppointments from "@/pages/doctor/appointments";
 import DoctorPatients from "@/pages/doctor/patients";
@@ -112,6 +113,9 @@ function Router() {
       </Route>
       <Route path="/admin/analytics">
         <AdminRoute component={AdminAnalytics} />
+      </Route>
+      <Route path="/admin/settings">
+        <AdminRoute component={AdminSettings} />
       </Route>
       <Route path="/doctor">
         <DoctorRoute component={DoctorDashboard} />

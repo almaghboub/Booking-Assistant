@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, CheckCircle, Bell, User, Phone, Share2, Copy, Check, PhoneIncoming, Plus } from "lucide-react";
+import { Calendar, Clock, CheckCircle, Bell, User, Phone, Share2, Copy, Check, PhoneIncoming, Plus, CalendarDays, Link2, Unlink } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -46,6 +46,32 @@ export default function DoctorDashboard() {
   const [arrivedDialogOpen, setArrivedDialogOpen] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Handle Google OAuth callback redirects
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("calendarConnected") === "1") {
+      toast({ title: "Google Calendar connected!", description: "Your appointments will now sync automatically." });
+      window.history.replaceState({}, "", "/doctor/dashboard");
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/calendar/status"] });
+    }
+    if (params.get("calendarError") === "1") {
+      toast({ title: "Calendar connection failed", description: "Please try again.", variant: "destructive" });
+      window.history.replaceState({}, "", "/doctor/dashboard");
+    }
+  }, []);
+
+  const { data: calendarStatus } = useQuery<{ connected: boolean; calendarId: string | null; googleConfigured: boolean }>({
+    queryKey: ["/api/doctor/calendar/status"],
+  });
+
+  const disconnectCalendarMutation = useMutation({
+    mutationFn: () => apiRequest("DELETE", "/api/doctor/calendar/disconnect", {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/calendar/status"] });
+      toast({ title: "Google Calendar disconnected" });
+    },
+  });
 
   const bookingLink = user?.doctorId
     ? `${window.location.origin}/book?doctor=${user.doctorId}`
@@ -198,6 +224,52 @@ export default function DoctorDashboard() {
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? "Copied!" : "Copy"}
               </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Google Calendar Sync */}
+      <Card className={calendarStatus?.connected ? "border-blue-200 dark:border-blue-800 bg-blue-50/40 dark:bg-blue-900/10" : "border-border"}>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${calendarStatus?.connected ? "bg-blue-100 dark:bg-blue-900/30" : "bg-muted"}`}>
+                <CalendarDays className={`w-4 h-4 ${calendarStatus?.connected ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">Google Calendar</p>
+                {calendarStatus?.connected ? (
+                  <p className="text-xs text-blue-600 dark:text-blue-400">Connected — appointments sync automatically</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Connect to sync appointments to your Google Calendar</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {calendarStatus?.connected ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => disconnectCalendarMutation.mutate()}
+                  disabled={disconnectCalendarMutation.isPending}
+                  className="gap-1.5 text-red-600 hover:text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
+                  data-testid="button-disconnect-calendar"
+                >
+                  <Unlink className="w-3.5 h-3.5" />Disconnect
+                </Button>
+              ) : calendarStatus?.googleConfigured ? (
+                <Button
+                  size="sm"
+                  onClick={() => { window.location.href = "/api/doctor/calendar/connect"; }}
+                  className="gap-1.5"
+                  data-testid="button-connect-calendar"
+                >
+                  <Link2 className="w-3.5 h-3.5" />Connect Google Calendar
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Google OAuth not configured — see admin settings</span>
+              )}
             </div>
           </div>
         </CardContent>

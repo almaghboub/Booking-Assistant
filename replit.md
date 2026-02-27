@@ -1,7 +1,7 @@
 # Rakaz Smart Clinic Automation System
 
 ## Overview
-A full-stack web-based clinic appointment booking and management platform built for clinics, doctors, and patients. Supports online booking, admin management, doctor dashboards, and analytics.
+A full-stack web-based clinic appointment booking and management platform built for clinics, doctors, and patients. Supports online booking, admin management, doctor dashboards, WhatsApp notifications, Google Calendar sync, and HL7 FHIR R4 EMR integration.
 
 ## Tech Stack
 - **Frontend**: React + TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, wouter
@@ -14,6 +14,7 @@ A full-stack web-based clinic appointment booking and management platform built 
 ### Public Booking (no auth required)
 - Multi-step booking wizard: Doctor → Service → Date/Time → Patient Details → Confirm
 - Real-time availability checking (based on doctor working hours + existing bookings)
+- Shareable doctor-specific booking links: `/book?doctor=DOCTOR_ID`
 - Available at `/book`
 
 ### Clinic Admin Dashboard
@@ -24,15 +25,51 @@ A full-stack web-based clinic appointment booking and management platform built 
 - Service management with duration, price, buffer time
 - Patient CRM with visit history and no-show tracking
 - Analytics with charts: daily volume, status breakdown, top services, peak hours
+- **Settings page** — integration status for WhatsApp, FHIR, and Google Calendar
 
 ### Doctor Dashboard
 - Login: `doctor1/2/3` / `doctor123`
 - Today's schedule with appointment statuses
 - Weekly view
 - Mark appointments as completed / no-show
-- "Doctor Arrived" notification button (broadcasts to confirmed patients)
+- "Doctor Arrived" notification button (broadcasts WhatsApp to all confirmed patients)
+- **Shareable booking link** with one-click copy
+- **Phone booking dialog** — book on behalf of patients who call in
+- **Google Calendar card** — connect/disconnect personal Google Calendar
+
+## Integrations
+
+### WhatsApp Business Cloud API (Meta)
+- Service file: `server/whatsapp.ts`
+- Uses `https://graph.facebook.com/v19.0/{phoneNumberId}/messages`
+- Required env vars: `WHATSAPP_API_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`
+- Fallback: logs to console when env vars are not set (safe for dev)
+- Triggers:
+  - New public booking → sends "pending confirmation" request to patient
+  - Status → confirmed → sends confirmation notice
+  - Status → cancelled → sends cancellation notice
+  - Doctor Arrived button → broadcasts to all confirmed patients today
+
+### Google Calendar (OAuth 2.0 per-doctor)
+- Service file: `server/googleCalendar.ts`
+- Required env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
+- Each doctor connects their own Google Calendar via OAuth
+- Appointments are created/updated in the doctor's calendar on confirm
+- Cancelled appointments delete the calendar event automatically
+- OAuth flow: `/api/doctor/calendar/connect` → Google → `/api/auth/google/callback`
+
+### HL7 FHIR R4 EMR Integration
+- Service file: `server/fhir.ts`
+- Base URL: `/fhir`
+- Auth: `Authorization: Bearer <FHIR_API_KEY>`
+- Required env var: `FHIR_API_KEY` (auto-generated, stored in shared env)
+- Endpoints: Patient CRUD, Appointment CRUD, CapabilityStatement (public)
+- `/fhir/metadata` — public, no auth
+- All other endpoints require Bearer token
 
 ## Routes
+
+### Frontend
 - `/` — Home (redirects based on auth)
 - `/login` — Login page
 - `/book` — Public appointment booking
@@ -42,17 +79,34 @@ A full-stack web-based clinic appointment booking and management platform built 
 - `/admin/services` — Service management
 - `/admin/patients` — Patient CRM
 - `/admin/analytics` — Analytics & reports
+- `/admin/settings` — Integration settings (WhatsApp, FHIR, Google Calendar)
 - `/doctor` — Doctor schedule (today/week)
 - `/doctor/appointments` — Doctor's appointments
 - `/doctor/patients` — Doctor's patients
 
+### API
+- `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
+- `GET /api/auth/google/callback` — Google OAuth redirect handler
+- `GET /api/public/doctors`, `/api/public/services`, `/api/public/slots`
+- `POST /api/public/appointments` — Patient self-booking
+- `GET/PATCH /api/admin/appointments`, `/api/admin/doctors`, etc.
+- `GET /api/admin/settings` — Integration status
+- `POST /api/admin/whatsapp/test` — Send test WhatsApp message
+- `GET /api/doctor/calendar/status` — Calendar connection status
+- `GET /api/doctor/calendar/connect` — Initiate Google OAuth
+- `DELETE /api/doctor/calendar/disconnect` — Remove tokens
+- `POST /api/doctor/appointments` — Phone booking (auto-confirmed)
+- `POST /api/doctor/arrived` — Trigger patient broadcast
+- `GET /fhir/metadata` — FHIR CapabilityStatement (public)
+- `GET/POST /fhir/Patient`, `GET/POST/PUT /fhir/Appointment` — FHIR resources
+
 ## Database Schema
 - `users` — Admin and doctor accounts
 - `clinics` — Clinic profile
-- `doctors` — Doctor profiles with working hours
+- `doctors` — Doctor profiles + `googleCalendarId`, `googleAccessToken`, `googleRefreshToken`, `googleTokenExpiry`
 - `services` — Clinic services with duration/price
 - `patients` — Patient records with no-show tracking
-- `appointments` — All appointments with status history
+- `appointments` — All appointments + `googleCalendarEventId`
 
 ## Seed Data
 - 1 clinic: Rakaz Medical Clinic
