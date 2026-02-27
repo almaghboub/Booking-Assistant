@@ -61,7 +61,7 @@ export function AppSidebar() {
         <div className="flex items-center gap-3">
           <img src={logoPath} alt="Mawid logo" className="w-12 h-12 object-contain shrink-0 rounded-md" />
           <div>
-            <p className="font-semibold text-sm text-sidebar-foreground leading-tight">Mawid</p>
+            <p className="font-semibold text-sm text-sidebar-foreground leading-tight">موعد</p>
             <p className="text-xs text-muted-foreground">
               {user?.role === "clinic_admin" ? "مدير العيادة" : user?.role === "doctor" ? "طبيب" : ""}
             </p>

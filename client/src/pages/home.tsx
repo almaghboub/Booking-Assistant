@@ -51,7 +51,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <img src={logoPath} alt="Mawid logo" className="w-12 h-12 object-contain shrink-0" />
-            <span className="font-bold text-foreground text-lg">Mawid</span>
+            <span className="font-bold text-foreground text-lg">موعد</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -273,7 +273,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-2.5 mb-4">
                 <img src={logoPath} alt="Mawid logo" className="w-10 h-10 object-contain shrink-0" />
-                <span className="font-bold text-foreground">Mawid</span>
+                <span className="font-bold text-foreground">موعد</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 أتمتة ذكية للعيادات لتجربة مريض أفضل.
@@ -296,7 +296,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-border mt-8 pt-6 text-center">
-            <p className="text-xs text-muted-foreground">© 2026 Mawid. جميع الحقوق محفوظة.</p>
+            <p className="text-xs text-muted-foreground">© 2026 موعد. جميع الحقوق محفوظة.</p>
           </div>
         </div>
       </footer>
