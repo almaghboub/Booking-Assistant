@@ -50,8 +50,8 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <img src={logoPath} alt="شعار ركاز" className="w-8 h-8 object-contain shrink-0" />
-            <span className="font-bold text-foreground text-lg">عيادة ركاز</span>
+            <img src={logoPath} alt="Mawid logo" className="w-12 h-12 object-contain shrink-0" />
+            <span className="font-bold text-foreground text-lg">Mawid</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -272,8 +272,8 @@ export default function HomePage() {
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <div className="flex items-center gap-2.5 mb-4">
-                <img src={logoPath} alt="شعار ركاز" className="w-7 h-7 object-contain shrink-0" />
-                <span className="font-bold text-foreground">عيادة ركاز</span>
+                <img src={logoPath} alt="Mawid logo" className="w-10 h-10 object-contain shrink-0" />
+                <span className="font-bold text-foreground">Mawid</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 أتمتة ذكية للعيادات لتجربة مريض أفضل.
@@ -296,7 +296,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t border-border mt-8 pt-6 text-center">
-            <p className="text-xs text-muted-foreground">© 2026 عيادة ركاز. جميع الحقوق محفوظة.</p>
+            <p className="text-xs text-muted-foreground">© 2026 Mawid. جميع الحقوق محفوظة.</p>
           </div>
         </div>
       </footer>

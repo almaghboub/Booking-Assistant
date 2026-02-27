@@ -193,9 +193,9 @@ export default function BookingPage() {
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <img src={logoPath} alt="شعار ركاز" className="w-7 h-7 object-contain shrink-0" />
+            <img src={logoPath} alt="Mawid logo" className="w-10 h-10 object-contain shrink-0" />
             <div>
-              <p className="font-semibold text-foreground text-sm leading-tight">عيادة ركاز</p>
+              <p className="font-semibold text-foreground text-sm leading-tight">Mawid</p>
               {selectedDoctor && step > 0 ? (
                 <p className="text-xs text-muted-foreground">حجز مع {selectedDoctor.name}</p>
               ) : (

@@ -54,7 +54,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Redirect to="/login" />;
   }
 
-  const pageTitle = PAGE_TITLES[location] ?? "عيادة ركاز";
+  const pageTitle = PAGE_TITLES[location] ?? "Mawid";
 
   const style = {
     "--sidebar-width": "16rem",
@@ -81,8 +81,8 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
             {/* يمين: شعار العيادة (مخفي على md+ لأن الشريط الجانبي يظهره) */}
             <div className="flex items-center gap-1.5 md:invisible shrink-0">
-              <img src={logoPath} alt="شعار ركاز" className="w-6 h-6 object-contain" />
-              <span className="text-xs font-bold text-foreground">ركاز</span>
+              <img src={logoPath} alt="Mawid logo" className="w-9 h-9 object-contain" />
+              <span className="text-xs font-bold text-foreground">Mawid</span>
             </div>
           </header>
 

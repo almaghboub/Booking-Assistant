@@ -47,8 +47,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src={logoPath} alt="شعار ركاز" className="w-16 h-16 object-contain mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">عيادة ركاز</h1>
+          <img src={logoPath} alt="Mawid logo" className="w-24 h-24 object-contain mb-4" />
+          <h1 className="text-2xl font-bold text-foreground">Mawid</h1>
           <p className="text-sm text-muted-foreground mt-1">إدارة المواعيد الذكية</p>
         </div>
 
