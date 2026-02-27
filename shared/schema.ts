@@ -30,6 +30,7 @@ export const doctors = pgTable("doctors", {
   name: text("name").notNull(),
   specialty: text("specialty").notNull(),
   photo: text("photo"),
+  backgroundPhoto: text("background_photo"),
   workingHours: text("working_hours").default("09:00-17:00"),
   breakTime: text("break_time").default("13:00-14:00"),
   isActive: boolean("is_active").default(true),

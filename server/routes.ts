@@ -1,7 +1,11 @@
+import express from "express";
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { storage, db } from "./storage";
 import {
   insertDoctorSchema, insertServiceSchema, insertAppointmentSchema, insertPatientSchema,
@@ -23,6 +27,18 @@ import {
 
 const PgStore = connectPg(session);
 const CLINIC_ID = "clinic-1";
+
+const uploadDir = path.join(process.cwd(), "public", "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const multerStorage = multer.diskStorage({
+  destination: uploadDir,
+  filename: (_req, file, cb) => {
+    const uid = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uid + path.extname(file.originalname));
+  },
+});
+const upload = multer({ storage: multerStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 function requireAuth(req: Request, res: Response, next: Function) {
   if (!(req.session as any).userId) {
@@ -97,6 +113,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // Register FHIR routes (includes /fhir/metadata public + authenticated routes)
   registerFhirRoutes(app);
+
+  // ───── FILE UPLOAD ────────────────────────────────────
+  app.use("/uploads", express.static(uploadDir));
+
+  app.post("/api/upload", requireAuth, upload.single("file"), (req: any, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    return res.json({ url: `/uploads/${req.file.filename}` });
+  });
 
   // ───── AUTH ──────────────────────────────────────────
   app.post("/api/auth/login", async (req, res) => {
@@ -395,6 +419,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       .orderBy(appointments.date, appointments.time);
     const enriched = await enrichAppointments(appts);
     return res.json(enriched);
+  });
+
+  // ───── DOCTOR: PROFILE ───────────────────────────────
+  app.get("/api/doctor/profile", requireDoctor, async (req, res) => {
+    const doctorId = (req.session as any).doctorId;
+    const doc = await storage.getDoctor(doctorId);
+    if (!doc) return res.status(404).json({ error: "Not found" });
+    return res.json(doc);
+  });
+
+  app.patch("/api/doctor/profile", requireDoctor, async (req, res) => {
+    const doctorId = (req.session as any).doctorId;
+    const { photo, backgroundPhoto } = req.body;
+    const doc = await storage.updateDoctor(doctorId, { photo, backgroundPhoto });
+    if (!doc) return res.status(404).json({ error: "Not found" });
+    return res.json(doc);
   });
 
   // ───── DOCTOR: CALENDAR ──────────────────────────────
