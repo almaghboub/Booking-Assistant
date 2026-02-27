@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect, useLocation } from "wouter";
+import { Switch, Route, Redirect, Link, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,7 +8,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
-import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
+import logoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
 
 import HomePage from "@/pages/home";
 import LoginPage from "@/pages/login";
@@ -79,10 +79,11 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
               {pageTitle}
             </p>
 
-            {/* يمين: شعار العيادة (مخفي على md+ لأن الشريط الجانبي يظهره) */}
-            <div className="flex items-center gap-1.5 md:invisible shrink-0">
-              <img src={logoPath} alt="Mawid logo" className="w-9 h-9 object-contain" />
-              <span className="text-xs font-bold text-foreground">موعد</span>
+            {/* يمين: شعار التطبيق (مخفي على md+ لأن الشريط الجانبي يظهره) */}
+            <div className="md:invisible shrink-0">
+              <Link href="/">
+                <img src={logoPath} alt="موعد" className="h-8 w-auto object-contain cursor-pointer" />
+              </Link>
             </div>
           </header>
 

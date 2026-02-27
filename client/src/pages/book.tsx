@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope, ChevronLeft, ChevronRight, Clock, CheckCircle2, Calendar, User, Phone, ArrowRight } from "lucide-react";
-import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
+import logoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
 import { apiRequest } from "@/lib/queryClient";
 import { format, addDays } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -193,9 +193,10 @@ export default function BookingPage() {
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <img src={logoPath} alt="Mawid logo" className="w-10 h-10 object-contain shrink-0" />
+            <Link href="/">
+              <img src={logoPath} alt="موعد" className="h-9 w-auto object-contain shrink-0 cursor-pointer" />
+            </Link>
             <div>
-              <p className="font-semibold text-foreground text-sm leading-tight">موعد</p>
               {selectedDoctor && step > 0 ? (
                 <p className="text-xs text-muted-foreground">حجز مع {selectedDoctor.name}</p>
               ) : (

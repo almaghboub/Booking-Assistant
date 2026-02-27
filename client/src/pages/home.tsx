@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
+import logoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,10 +49,9 @@ export default function HomePage() {
       {/* ── الشريط العلوي ── */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <img src={logoPath} alt="Mawid logo" className="w-12 h-12 object-contain shrink-0" />
-            <span className="font-bold text-foreground text-lg">موعد</span>
-          </div>
+          <Link href="/" className="flex items-center">
+            <img src={logoPath} alt="موعد" className="h-12 w-auto object-contain shrink-0" />
+          </Link>
 
           <nav className="hidden md:flex items-center gap-6">
             <a href="#doctors" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -271,9 +270,8 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <img src={logoPath} alt="Mawid logo" className="w-10 h-10 object-contain shrink-0" />
-                <span className="font-bold text-foreground">موعد</span>
+              <div className="mb-4">
+                <img src={logoPath} alt="موعد" className="h-10 w-auto object-contain" />
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 أتمتة ذكية للعيادات لتجربة مريض أفضل.

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
-import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
+import logoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
 import { useEffect } from "react";
 
 const loginSchema = z.object({
@@ -47,9 +47,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src={logoPath} alt="Mawid logo" className="w-24 h-24 object-contain mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">موعد</h1>
-          <p className="text-sm text-muted-foreground mt-1">إدارة المواعيد الذكية</p>
+          <img src={logoPath} alt="موعد" className="h-24 w-auto object-contain mb-2" />
+          <p className="text-sm text-muted-foreground">إدارة المواعيد الذكية</p>
         </div>
 
         <Card>

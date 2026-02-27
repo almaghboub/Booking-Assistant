@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
+import logoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
 import {
   Sidebar,
   SidebarContent,
@@ -58,15 +58,9 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <img src={logoPath} alt="Mawid logo" className="w-12 h-12 object-contain shrink-0 rounded-md" />
-          <div>
-            <p className="font-semibold text-sm text-sidebar-foreground leading-tight">موعد</p>
-            <p className="text-xs text-muted-foreground">
-              {user?.role === "clinic_admin" ? "مدير العيادة" : user?.role === "doctor" ? "طبيب" : ""}
-            </p>
-          </div>
-        </div>
+        <Link href="/" className="block">
+          <img src={logoPath} alt="موعد" className="h-10 w-auto object-contain" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
