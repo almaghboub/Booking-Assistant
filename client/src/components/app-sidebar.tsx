@@ -59,7 +59,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <Link href="/" className="block">
-          <img src={logoPath} alt="موعد" className="h-10 w-auto object-contain" />
+          <img src={logoPath} alt="موعد" className="h-[100px] w-auto object-contain" />
         </Link>
       </SidebarHeader>
 

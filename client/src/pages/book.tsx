@@ -194,7 +194,7 @@ export default function BookingPage() {
               </Button>
             </Link>
             <Link href="/">
-              <img src={logoPath} alt="موعد" className="h-9 w-auto object-contain shrink-0 cursor-pointer" />
+              <img src={logoPath} alt="موعد" className="h-[90px] w-auto object-contain shrink-0 cursor-pointer" />
             </Link>
             <div>
               {selectedDoctor && step > 0 ? (

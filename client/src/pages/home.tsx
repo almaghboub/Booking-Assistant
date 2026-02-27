@@ -48,9 +48,9 @@ export default function HomePage() {
 
       {/* ── الشريط العلوي ── */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-[140px] flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center">
-            <img src={logoPath} alt="موعد" className="h-12 w-auto object-contain shrink-0" />
+            <img src={logoPath} alt="موعد" className="h-[120px] w-auto object-contain shrink-0" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
@@ -271,7 +271,7 @@ export default function HomePage() {
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <div className="mb-4">
-                <img src={logoPath} alt="موعد" className="h-10 w-auto object-contain" />
+                <img src={logoPath} alt="موعد" className="h-[100px] w-auto object-contain" />
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 أتمتة ذكية للعيادات لتجربة مريض أفضل.

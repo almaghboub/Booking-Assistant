@@ -67,7 +67,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0">
           {/* ── الرأس ── */}
-          <header className="flex items-center justify-between px-3 border-b border-border bg-background shrink-0 h-14 gap-2">
+          <header className="flex items-center justify-between px-3 border-b border-border bg-background shrink-0 h-[100px] gap-2">
             {/* يسار: زر الشريط الجانبي + تبديل السمة */}
             <div className="flex items-center gap-1 shrink-0">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
@@ -82,7 +82,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
             {/* يمين: شعار التطبيق (مخفي على md+ لأن الشريط الجانبي يظهره) */}
             <div className="md:invisible shrink-0">
               <Link href="/">
-                <img src={logoPath} alt="موعد" className="h-8 w-auto object-contain cursor-pointer" />
+                <img src={logoPath} alt="موعد" className="h-20 w-auto object-contain cursor-pointer" />
               </Link>
             </div>
           </header>

@@ -47,7 +47,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src={logoPath} alt="موعد" className="h-24 w-auto object-contain mb-2" />
+          <img src={logoPath} alt="موعد" className="h-60 w-auto object-contain mb-2" />
           <p className="text-sm text-muted-foreground">إدارة المواعيد الذكية</p>
         </div>
 
