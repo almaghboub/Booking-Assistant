@@ -9,31 +9,48 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, ChevronLeft, ChevronRight, Clock, CheckCircle2, Calendar, User, Phone, ArrowRight } from "lucide-react";
-import logoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
+import { Stethoscope, ChevronLeft, ChevronRight, Clock, CheckCircle2, Calendar, User, Phone, ArrowRight, ArrowLeft } from "lucide-react";
+import arLogoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
+import enLogoPath from "@assets/45A1E150-36A4-404D-9C46-272B6E73972F_1772233514083.png";
 import { apiRequest } from "@/lib/queryClient";
 import { format, addDays } from "date-fns";
 import { ar } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import type { Doctor, Service } from "@shared/schema";
+import { useLanguage } from "@/hooks/use-language";
 
 const patientSchema = z.object({
-  patientName: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
-  patientPhone: z.string().min(8, "يرجى إدخال رقم هاتف صحيح"),
+  patientName: z.string().min(2, "Name must be at least 2 characters"),
+  patientPhone: z.string().min(8, "Please enter a valid phone number"),
   notes: z.string().optional(),
 });
 
 type PatientForm = z.infer<typeof patientSchema>;
 
-const STEPS = ["الطبيب", "الخدمة", "التاريخ والوقت", "بياناتك", "التأكيد"];
 const CLINIC_ID = "clinic-1";
 
-function TimeSlotGrid({ slots, selected, onSelect }: {
+function LanguageToggle() {
+  const { t, toggleLanguage } = useLanguage();
+  return (
+    <button
+      onClick={toggleLanguage}
+      title={t("flagSwitchTitle")}
+      data-testid="button-language-toggle-book"
+      className="text-xl leading-none w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
+    >
+      {t("flagSwitch")}
+    </button>
+  );
+}
+
+function TimeSlotGrid({ slots, selected, onSelect, noSlotsMsg }: {
   slots: string[];
   selected: string | null;
   onSelect: (slot: string) => void;
+  noSlotsMsg: string;
 }) {
   if (slots.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-6">لا توجد مواعيد متاحة لهذا التاريخ</p>;
+    return <p className="text-sm text-muted-foreground text-center py-6">{noSlotsMsg}</p>;
   }
   return (
     <div className="grid grid-cols-3 gap-2">
@@ -59,6 +76,15 @@ export default function BookingPage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const preselectedDoctorId = params.get("doctor");
+  const { t, language } = useLanguage();
+  const logoPath = language === "en" ? enLogoPath : arLogoPath;
+  const dateLocale = language === "en" ? enUS : ar;
+  const isRtl = language === "ar";
+  const BackChevron = isRtl ? ChevronRight : ChevronLeft;
+  const ForwardChevron = isRtl ? ChevronLeft : ChevronRight;
+  const HomeArrow = isRtl ? ArrowRight : ArrowLeft;
+
+  const STEPS: string[] = t("book_steps");
 
   const [step, setStep] = useState(0);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
@@ -106,7 +132,7 @@ export default function BookingPage() {
     },
   });
 
-  const next7Days = Array.from({ length: 14 }, (_, i) => {
+  const next14Days = Array.from({ length: 14 }, (_, i) => {
     const d = addDays(new Date(), i + 1);
     return format(d, "yyyy-MM-dd");
   });
@@ -132,34 +158,33 @@ export default function BookingPage() {
             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-2">تم طلب الموعد!</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              موعدك قيد الانتظار. ستصلك رسالة واتساب قريباً للتأكيد.
-            </p>
-            <div className="bg-muted rounded-lg p-4 text-right space-y-2 mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-2">{t("book_success_title")}</h2>
+            <p className="text-sm text-muted-foreground mb-6">{t("book_success_sub")}</p>
+            <div className={`bg-muted rounded-lg p-4 ${isRtl ? "text-right" : "text-left"} space-y-2 mb-6`}>
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">{selectedDoctor?.name}</span>
-                <span className="text-muted-foreground">الطبيب</span>
+                <span className="text-muted-foreground">{t("book_success_doctor")}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">{selectedService?.name}</span>
-                <span className="text-muted-foreground">الخدمة</span>
+                <span className="text-muted-foreground">{t("book_success_service")}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="font-medium text-foreground">{format(new Date(selectedDate + "T00:00:00"), "d MMMM yyyy", { locale: ar })}</span>
-                <span className="text-muted-foreground">التاريخ</span>
+                <span className="font-medium text-foreground">{format(new Date(selectedDate + "T00:00:00"), "d MMMM yyyy", { locale: dateLocale })}</span>
+                <span className="text-muted-foreground">{t("book_success_date")}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">{selectedTime}</span>
-                <span className="text-muted-foreground">الوقت</span>
+                <span className="text-muted-foreground">{t("book_success_time")}</span>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">
-              أجب بـ <strong>نعم</strong> للتأكيد أو <strong>لا</strong> للإلغاء عند وصول رسالة واتساب.
-            </p>
+            <p
+              className="text-xs text-muted-foreground mb-4"
+              dangerouslySetInnerHTML={{ __html: t("book_success_wa_note") }}
+            />
             <div className="flex gap-3">
               <Link href="/" className="flex-1">
-                <Button variant="outline" className="w-full">العودة للرئيسية</Button>
+                <Button variant="outline" className="w-full">{t("book_go_home")}</Button>
               </Link>
               <Button
                 className="flex-1"
@@ -173,7 +198,7 @@ export default function BookingPage() {
                 }}
                 data-testid="button-book-another"
               >
-                حجز آخر
+                {t("book_another")}
               </Button>
             </div>
           </CardContent>
@@ -184,34 +209,37 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* الرأس */}
+      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <Link href="/">
               <Button size="icon" variant="ghost" className="shrink-0">
-                <ArrowRight className="w-4 h-4" />
+                <HomeArrow className="w-4 h-4" />
               </Button>
             </Link>
             <Link href="/">
-              <img src={logoPath} alt="موعد" className="h-[90px] w-auto object-contain shrink-0 cursor-pointer" />
+              <img src={logoPath} alt={t("logoAlt")} className="h-[90px] w-auto object-contain shrink-0 cursor-pointer" />
             </Link>
             <div>
               {selectedDoctor && step > 0 ? (
-                <p className="text-xs text-muted-foreground">حجز مع {selectedDoctor.name}</p>
+                <p className="text-xs text-muted-foreground">{t("book_booking_with")} {selectedDoctor.name}</p>
               ) : (
-                <p className="text-xs text-muted-foreground">حجز موعد عبر الإنترنت</p>
+                <p className="text-xs text-muted-foreground">{t("book_back_label")}</p>
               )}
             </div>
           </div>
-          <Link href="/login">
-            <span className="text-xs text-primary hover:underline underline-offset-2">دخول الموظفين</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageToggle />
+            <Link href="/login">
+              <span className="text-xs text-primary hover:underline underline-offset-2">{t("book_staff_login")}</span>
+            </Link>
+          </div>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* مؤشر الخطوات */}
+        {/* Step indicator */}
         <div className="flex items-center gap-1 mb-8 overflow-x-auto pb-1">
           {STEPS.map((s, i) => (
             <div key={s} className="flex items-center gap-1 shrink-0">
@@ -232,11 +260,11 @@ export default function BookingPage() {
           ))}
         </div>
 
-        {/* الخطوة 0: اختر الطبيب */}
+        {/* Step 0: Choose Doctor */}
         {step === 0 && (
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-1">اختر طبيباً</h2>
-            <p className="text-sm text-muted-foreground mb-6">حدد الطبيب الذي تريد زيارته</p>
+            <h2 className="text-xl font-bold text-foreground mb-1">{t("book_step0_title")}</h2>
+            <p className="text-sm text-muted-foreground mb-6">{t("book_step0_sub")}</p>
             {loadingDoctors ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />)}
@@ -265,7 +293,7 @@ export default function BookingPage() {
                           <Clock className="w-3 h-3" />{doc.workingHours}
                         </p>
                       </div>
-                      <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <ForwardChevron className="w-4 h-4 text-muted-foreground shrink-0" />
                     </div>
                   </div>
                 ))}
@@ -274,7 +302,7 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* الخطوة 1: اختر الخدمة */}
+        {/* Step 1: Choose Service */}
         {step === 1 && (
           <div>
             {preselectedDoctorId && selectedDoctor && (
@@ -286,12 +314,12 @@ export default function BookingPage() {
                   <p className="text-sm font-semibold text-foreground">{selectedDoctor.name}</p>
                   <p className="text-xs text-muted-foreground">{selectedDoctor.specialty}</p>
                 </div>
-                <Badge variant="secondary" className="mr-auto text-xs">محدد</Badge>
+                <Badge variant="secondary" className="mr-auto text-xs">{t("book_step1_selected")}</Badge>
               </div>
             )}
-            <h2 className="text-xl font-bold text-foreground mb-1">اختر خدمة</h2>
+            <h2 className="text-xl font-bold text-foreground mb-1">{t("book_step1_title")}</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              حدد الخدمة مع <span className="font-medium text-foreground">{selectedDoctor?.name}</span>
+              {t("book_step1_sub")} <span className="font-medium text-foreground">{selectedDoctor?.name}</span>
             </p>
             {loadingServices ? (
               <div className="space-y-3">
@@ -311,40 +339,40 @@ export default function BookingPage() {
                         <p className="font-semibold text-foreground">{svc.name}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="w-3 h-3" />{svc.duration} دقيقة
+                            <Clock className="w-3 h-3" />{svc.duration} {t("book_min")}
                           </span>
                           {svc.price && (
-                            <span className="text-xs text-muted-foreground">{svc.price} د.ل</span>
+                            <span className="text-xs text-muted-foreground">{svc.price} {t("book_currency")}</span>
                           )}
                         </div>
                       </div>
-                      <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <ForwardChevron className="w-4 h-4 text-muted-foreground shrink-0" />
                     </div>
                   </div>
                 ))}
                 {services.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-8">لا توجد خدمات متاحة لهذا الطبيب</p>
+                  <p className="text-center text-sm text-muted-foreground py-8">{t("book_step1_none")}</p>
                 )}
               </div>
             )}
             {!preselectedDoctorId && (
               <Button variant="ghost" size="sm" className="mt-4 gap-1" onClick={() => setStep(0)} data-testid="button-back-step1">
-                رجوع <ChevronRight className="w-4 h-4" />
+                {t("book_back")} <BackChevron className="w-4 h-4" />
               </Button>
             )}
           </div>
         )}
 
-        {/* الخطوة 2: اختر التاريخ والوقت */}
+        {/* Step 2: Choose Date & Time */}
         {step === 2 && (
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-1">اختر التاريخ والوقت</h2>
-            <p className="text-sm text-muted-foreground mb-6">حدد موعد زيارتك</p>
+            <h2 className="text-xl font-bold text-foreground mb-1">{t("book_step2_title")}</h2>
+            <p className="text-sm text-muted-foreground mb-6">{t("book_step2_sub")}</p>
 
             <div className="mb-6">
-              <p className="text-sm font-medium text-foreground mb-3">اختر تاريخاً</p>
+              <p className="text-sm font-medium text-foreground mb-3">{t("book_pick_date")}</p>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-                {next7Days.map((date) => {
+                {next14Days.map((date) => {
                   const d = new Date(date + "T00:00:00");
                   return (
                     <button
@@ -357,9 +385,9 @@ export default function BookingPage() {
                           : "bg-background border-border text-foreground hover-elevate"
                       }`}
                     >
-                      <span className="text-xs opacity-70">{format(d, "EEE", { locale: ar })}</span>
+                      <span className="text-xs opacity-70">{format(d, "EEE", { locale: dateLocale })}</span>
                       <span className="font-semibold text-sm mt-0.5">{format(d, "d")}</span>
-                      <span className="text-xs opacity-70">{format(d, "MMM", { locale: ar })}</span>
+                      <span className="text-xs opacity-70">{format(d, "MMM", { locale: dateLocale })}</span>
                     </button>
                   );
                 })}
@@ -368,20 +396,25 @@ export default function BookingPage() {
 
             {selectedDate && (
               <div className="mb-6">
-                <p className="text-sm font-medium text-foreground mb-3">الأوقات المتاحة</p>
+                <p className="text-sm font-medium text-foreground mb-3">{t("book_available_slots")}</p>
                 {loadingSlots ? (
                   <div className="grid grid-cols-3 gap-2">
                     {[1,2,3,4,5,6].map(i => <div key={i} className="h-10 bg-muted animate-pulse rounded-md" />)}
                   </div>
                 ) : (
-                  <TimeSlotGrid slots={slots} selected={selectedTime} onSelect={setSelectedTime} />
+                  <TimeSlotGrid
+                    slots={slots}
+                    selected={selectedTime}
+                    onSelect={setSelectedTime}
+                    noSlotsMsg={t("book_no_slots")}
+                  />
                 )}
               </div>
             )}
 
             <div className="flex items-center gap-3 mt-4">
               <Button variant="ghost" size="sm" onClick={() => setStep(1)} data-testid="button-back-step2" className="gap-1">
-                رجوع <ChevronRight className="w-4 h-4" />
+                {t("book_back")} <BackChevron className="w-4 h-4" />
               </Button>
               <Button
                 disabled={!selectedDate || !selectedTime}
@@ -389,105 +422,123 @@ export default function BookingPage() {
                 data-testid="button-continue-step2"
                 className="gap-1"
               >
-                <ChevronLeft className="w-4 h-4" /> متابعة
+                <ForwardChevron className="w-4 h-4" /> {t("book_continue")}
               </Button>
             </div>
           </div>
         )}
 
-        {/* الخطوة 3: البيانات الشخصية */}
+        {/* Step 3: Your Details */}
         {step === 3 && (
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-1">بياناتك</h2>
-            <p className="text-sm text-muted-foreground mb-6">أدخل معلومات التواصل</p>
+            <h2 className="text-xl font-bold text-foreground mb-1">{t("book_step3_title")}</h2>
+            <p className="text-sm text-muted-foreground mb-6">{t("book_step3_sub")}</p>
             <form onSubmit={form.handleSubmit(() => setStep(4))} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="patientName">الاسم الكامل</Label>
+                <Label htmlFor="patientName">{t("book_full_name")}</Label>
                 <div className="relative">
-                  <User className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="patientName" className="pr-9" placeholder="اسمك الكامل" data-testid="input-patient-name" {...form.register("patientName")} />
+                  <User className={`w-4 h-4 absolute ${isRtl ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 text-muted-foreground`} />
+                  <Input
+                    id="patientName"
+                    className={isRtl ? "pr-9" : "pl-9"}
+                    placeholder={t("book_name_placeholder")}
+                    data-testid="input-patient-name"
+                    {...form.register("patientName")}
+                  />
                 </div>
                 {form.formState.errors.patientName && (
                   <p className="text-xs text-destructive">{form.formState.errors.patientName.message}</p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="patientPhone">رقم الهاتف / واتساب</Label>
+                <Label htmlFor="patientPhone">{t("book_phone")}</Label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="patientPhone" className="pr-9" placeholder="+218 91 234 5678" data-testid="input-patient-phone" {...form.register("patientPhone")} />
+                  <Phone className={`w-4 h-4 absolute ${isRtl ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 text-muted-foreground`} />
+                  <Input
+                    id="patientPhone"
+                    className={isRtl ? "pr-9" : "pl-9"}
+                    placeholder="+218 91 234 5678"
+                    data-testid="input-patient-phone"
+                    {...form.register("patientPhone")}
+                  />
                 </div>
                 {form.formState.errors.patientPhone && (
                   <p className="text-xs text-destructive">{form.formState.errors.patientPhone.message}</p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="notes">ملاحظات (اختياري)</Label>
-                <Input id="notes" placeholder="أي ملاحظات أو طلبات خاصة" data-testid="input-notes" {...form.register("notes")} />
+                <Label htmlFor="notes">{t("book_notes")}</Label>
+                <Input
+                  id="notes"
+                  placeholder={t("book_notes_placeholder")}
+                  data-testid="input-notes"
+                  {...form.register("notes")}
+                />
               </div>
               <div className="flex items-center gap-3 pt-2">
                 <Button variant="ghost" size="sm" type="button" onClick={() => setStep(2)} data-testid="button-back-step3" className="gap-1">
-                  رجوع <ChevronRight className="w-4 h-4" />
+                  {t("book_back")} <BackChevron className="w-4 h-4" />
                 </Button>
                 <Button type="submit" data-testid="button-continue-step3" className="gap-1">
-                  <ChevronLeft className="w-4 h-4" /> مراجعة الحجز
+                  <ForwardChevron className="w-4 h-4" /> {t("book_review")}
                 </Button>
               </div>
             </form>
           </div>
         )}
 
-        {/* الخطوة 4: التأكيد */}
+        {/* Step 4: Confirm */}
         {step === 4 && (
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-1">تأكيد الموعد</h2>
-            <p className="text-sm text-muted-foreground mb-6">راجع تفاصيل حجزك قبل التأكيد</p>
+            <h2 className="text-xl font-bold text-foreground mb-1">{t("book_step4_title")}</h2>
+            <p className="text-sm text-muted-foreground mb-6">{t("book_step4_sub")}</p>
             <Card className="mb-6">
               <CardContent className="pt-4 pb-4 space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-foreground">{selectedDoctor?.name}</span>
-                  <span className="text-muted-foreground flex items-center gap-1.5"><Stethoscope className="w-3.5 h-3.5" />الطبيب</span>
+                  <span className="text-muted-foreground flex items-center gap-1.5"><Stethoscope className="w-3.5 h-3.5" />{t("book_doctor")}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-foreground">{selectedDoctor?.specialty}</span>
-                  <span className="text-muted-foreground">التخصص</span>
+                  <span className="text-muted-foreground">{t("book_specialty")}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-foreground">{selectedService?.name}</span>
-                  <span className="text-muted-foreground">الخدمة</span>
+                  <span className="text-muted-foreground">{t("book_service")}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-foreground">{selectedService?.duration} دقيقة</span>
-                  <span className="text-muted-foreground flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />المدة</span>
+                  <span className="font-medium text-foreground">{selectedService?.duration} {t("book_min")}</span>
+                  <span className="text-muted-foreground flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{t("book_duration")}</span>
                 </div>
                 <div className="border-t border-border pt-3 flex items-center justify-between text-sm">
                   <span className="font-semibold text-foreground">
-                    {format(new Date(selectedDate + "T00:00:00"), "d MMM yyyy", { locale: ar })} — {selectedTime}
+                    {format(new Date(selectedDate + "T00:00:00"), "d MMM yyyy", { locale: dateLocale })} — {selectedTime}
                   </span>
-                  <span className="text-muted-foreground flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />التاريخ والوقت</span>
+                  <span className="text-muted-foreground flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />{t("book_datetime")}</span>
                 </div>
                 <div className="border-t border-border pt-3 space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium text-foreground">{form.getValues("patientName")}</span>
-                    <span className="text-muted-foreground flex items-center gap-1.5"><User className="w-3.5 h-3.5" />المريض</span>
+                    <span className="text-muted-foreground flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{t("book_patient")}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium text-foreground">{form.getValues("patientPhone")}</span>
-                    <span className="text-muted-foreground flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />الهاتف</span>
+                    <span className="text-muted-foreground flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{t("book_phone_label")}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 mb-6">
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                ستصلك رسالة واتساب لتأكيد موعدك. أجب بـ <strong>نعم</strong> للتأكيد أو <strong>لا</strong> للإلغاء.
-              </p>
+              <p
+                className="text-xs text-blue-700 dark:text-blue-300"
+                dangerouslySetInnerHTML={{ __html: t("book_whatsapp_note") }}
+              />
             </div>
 
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={() => setStep(3)} data-testid="button-back-step4" className="gap-1">
-                رجوع <ChevronRight className="w-4 h-4" />
+                {t("book_back")} <BackChevron className="w-4 h-4" />
               </Button>
               <Button
                 onClick={() => form.handleSubmit(handleBook)()}
@@ -495,7 +546,7 @@ export default function BookingPage() {
                 data-testid="button-confirm-booking"
                 className="gap-1"
               >
-                {bookMutation.isPending ? "جارٍ الحجز..." : "تأكيد الحجز"}
+                {bookMutation.isPending ? t("book_confirming") : t("book_confirm")}
               </Button>
             </div>
           </div>

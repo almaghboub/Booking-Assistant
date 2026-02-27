@@ -7,8 +7,10 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageProvider, useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
-import logoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
+import arLogoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
+import enLogoPath from "@assets/45A1E150-36A4-404D-9C46-272B6E73972F_1772233514083.png";
 
 import HomePage from "@/pages/home";
 import LoginPage from "@/pages/login";
@@ -25,21 +27,23 @@ import DoctorAppointments from "@/pages/doctor/appointments";
 import DoctorPatients from "@/pages/doctor/patients";
 import NotFound from "@/pages/not-found";
 
-const PAGE_TITLES: Record<string, string> = {
-  "/admin": "لوحة التحكم",
-  "/admin/appointments": "المواعيد",
-  "/admin/doctors": "الأطباء",
-  "/admin/services": "الخدمات",
-  "/admin/patients": "المرضى",
-  "/admin/analytics": "التحليلات",
-  "/admin/settings": "الإعدادات",
-  "/doctor": "جدول مواعيدي",
-  "/doctor/appointments": "مواعيدي",
-  "/doctor/patients": "مرضاي",
-};
+function LanguageToggle() {
+  const { t, toggleLanguage } = useLanguage();
+  return (
+    <button
+      onClick={toggleLanguage}
+      title={t("flagSwitchTitle")}
+      data-testid="button-language-toggle"
+      className="text-xl leading-none w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted transition-colors"
+    >
+      {t("flagSwitch")}
+    </button>
+  );
+}
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
+  const { t, language } = useLanguage();
   const [location, navigate] = useLocation();
 
   if (isLoading) {
@@ -54,7 +58,21 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Redirect to="/login" />;
   }
 
+  const PAGE_TITLES: Record<string, string> = {
+    "/admin":                t("admin_dashboard"),
+    "/admin/appointments":   t("admin_appointments"),
+    "/admin/doctors":        t("admin_doctors"),
+    "/admin/services":       t("admin_services"),
+    "/admin/patients":       t("admin_patients"),
+    "/admin/analytics":      t("admin_analytics"),
+    "/admin/settings":       t("admin_settings"),
+    "/doctor":               t("doctor_schedule"),
+    "/doctor/appointments":  t("doctor_appointments"),
+    "/doctor/patients":      t("doctor_patients"),
+  };
+
   const pageTitle = PAGE_TITLES[location] ?? "موعد";
+  const logoPath = language === "en" ? enLogoPath : arLogoPath;
 
   const style = {
     "--sidebar-width": "16rem",
@@ -68,10 +86,11 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col flex-1 min-w-0">
           {/* ── الرأس ── */}
           <header className="flex items-center justify-between px-3 border-b border-border bg-background shrink-0 h-[100px] gap-2">
-            {/* يسار: زر الشريط الجانبي + تبديل السمة */}
+            {/* يسار: زر الشريط الجانبي + تبديل السمة + تبديل اللغة */}
             <div className="flex items-center gap-1 shrink-0">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <ThemeToggle />
+              <LanguageToggle />
             </div>
 
             {/* وسط: عنوان الصفحة */}
@@ -79,10 +98,10 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
               {pageTitle}
             </p>
 
-            {/* يمين: شعار التطبيق (مخفي على md+ لأن الشريط الجانبي يظهره) */}
+            {/* يمين: شعار التطبيق */}
             <div className="md:invisible shrink-0">
               <Link href="/">
-                <img src={logoPath} alt="موعد" className="h-20 w-auto object-contain cursor-pointer" />
+                <img src={logoPath} alt={t("logoAlt")} className="h-20 w-auto object-contain cursor-pointer" />
               </Link>
             </div>
           </header>
@@ -172,10 +191,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

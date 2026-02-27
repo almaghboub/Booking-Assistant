@@ -11,6 +11,15 @@ A full-stack web-based clinic appointment booking and management platform built 
 
 ## Features
 
+### Arabic / English Language Switching
+- Flag toggle button (🇬🇧 / 🇱🇾) appears in every page header
+- Switches between full Arabic (RTL) and English (LTR) modes
+- Language preference persisted in `localStorage` ("mawid-lang")
+- Logo swaps: Arabic logo (`F1C71113-...png`) ↔ English "Mawid" logo (`45A1E150-...png`)
+- Translations in `client/src/lib/i18n.ts`; context in `client/src/hooks/use-language.tsx`
+- Public pages fully bilingual: home, login, booking wizard
+- Admin/doctor dashboards use Arabic (staff-facing); navigation labels are translated
+
 ### Public Booking (no auth required)
 - Multi-step booking wizard: Doctor → Service → Date/Time → Patient Details → Confirm
 - Real-time availability checking (based on doctor working hours + existing bookings)

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
 import {
   LayoutDashboard,
   Calendar,
@@ -10,54 +11,49 @@ import {
   UserCheck,
 } from "lucide-react";
 
-const adminTabs = [
-  { title: "الرئيسية", url: "/admin", icon: LayoutDashboard },
-  { title: "المواعيد", url: "/admin/appointments", icon: Calendar },
-  { title: "المرضى", url: "/admin/patients", icon: Users },
-  { title: "الأطباء", url: "/admin/doctors", icon: Stethoscope },
-  { title: "الإعدادات", url: "/admin/settings", icon: Settings },
-];
-
-const doctorTabs = [
-  { title: "جدولي", url: "/doctor", icon: CalendarDays },
-  { title: "المواعيد", url: "/doctor/appointments", icon: Calendar },
-  { title: "المرضى", url: "/doctor/patients", icon: UserCheck },
-];
-
 export function MobileBottomNav() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [location] = useLocation();
 
-  const tabs =
-    user?.role === "clinic_admin"
-      ? adminTabs
-      : user?.role === "doctor"
-      ? doctorTabs
-      : [];
+  if (!user) return null;
 
-  if (tabs.length === 0) return null;
+  const adminTabs = [
+    { href: "/admin",               icon: LayoutDashboard, label: t("admin_dashboard")    },
+    { href: "/admin/appointments",  icon: Calendar,        label: t("admin_appointments")  },
+    { href: "/admin/patients",      icon: Users,           label: t("admin_patients")      },
+    { href: "/admin/doctors",       icon: Stethoscope,     label: t("admin_doctors")       },
+    { href: "/admin/settings",      icon: Settings,        label: t("admin_settings")      },
+  ];
+
+  const doctorTabs = [
+    { href: "/doctor",              icon: CalendarDays,    label: t("doctor_schedule")      },
+    { href: "/doctor/appointments", icon: Calendar,        label: t("doctor_appointments")  },
+    { href: "/doctor/patients",     icon: UserCheck,       label: t("doctor_patients")      },
+  ];
+
+  const tabs = user.role === "doctor" ? doctorTabs : adminTabs;
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 h-16 bg-background border-t border-border flex items-stretch">
-      {tabs.map((tab) => {
-        const isActive =
-          location === tab.url ||
-          (tab.url !== "/admin" &&
-            tab.url !== "/doctor" &&
-            location.startsWith(tab.url));
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 h-16 bg-background border-t border-border flex items-stretch"
+      data-testid="mobile-bottom-nav"
+    >
+      {tabs.map(tab => {
+        const active =
+          location === tab.href ||
+          (tab.href !== "/admin" && tab.href !== "/doctor" && location.startsWith(tab.href));
         return (
           <Link
-            key={tab.url}
-            href={tab.url}
+            key={tab.href}
+            href={tab.href}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors ${
-              isActive
-                ? "text-primary"
-                : "text-muted-foreground hover:text-foreground"
+              active ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
-            data-testid={`bottom-nav-${tab.url.replace(/\//g, "-")}`}
+            data-testid={`bottom-nav-${tab.href.replace(/\//g, "-")}`}
           >
-            <tab.icon className={`w-5 h-5 shrink-0 ${isActive ? "stroke-[2.5]" : ""}`} />
-            <span className="text-[10px] font-medium leading-tight">{tab.title}</span>
+            <tab.icon className={`w-5 h-5 shrink-0 ${active ? "stroke-[2.5]" : ""}`} />
+            <span className="text-[10px] font-medium leading-tight">{tab.label}</span>
           </Link>
         );
       })}
