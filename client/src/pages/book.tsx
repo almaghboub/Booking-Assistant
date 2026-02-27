@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Stethoscope, ChevronLeft, ChevronRight, Clock, CheckCircle2, Calendar, User, Phone, ArrowRight } from "lucide-react";
+import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
 import { apiRequest } from "@/lib/queryClient";
 import { format, addDays } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -192,9 +193,7 @@ export default function BookingPage() {
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shrink-0">
-              <Stethoscope className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
+            <img src={logoPath} alt="شعار ركاز" className="w-7 h-7 object-contain shrink-0" />
             <div>
               <p className="font-semibold text-foreground text-sm leading-tight">عيادة ركاز</p>
               {selectedDoctor && step > 0 ? (

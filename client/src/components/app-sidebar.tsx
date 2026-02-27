@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
 import {
   Sidebar,
   SidebarContent,
@@ -58,9 +59,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-sidebar-primary flex items-center justify-center shrink-0">
-            <Stethoscope className="w-4 h-4 text-sidebar-primary-foreground" />
-          </div>
+          <img src={logoPath} alt="شعار ركاز" className="w-8 h-8 object-contain shrink-0 rounded-md" />
           <div>
             <p className="font-semibold text-sm text-sidebar-foreground leading-tight">عيادة ركاز</p>
             <p className="text-xs text-muted-foreground">

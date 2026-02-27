@@ -1,10 +1,10 @@
 import { Link } from "wouter";
+import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Stethoscope,
   CalendarCheck,
   Clock,
   Shield,
@@ -50,9 +50,7 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center shrink-0">
-              <Stethoscope className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src={logoPath} alt="شعار ركاز" className="w-8 h-8 object-contain shrink-0" />
             <span className="font-bold text-foreground text-lg">عيادة ركاز</span>
           </div>
 
@@ -274,9 +272,7 @@ export default function HomePage() {
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-                  <Stethoscope className="w-3.5 h-3.5 text-primary-foreground" />
-                </div>
+                <img src={logoPath} alt="شعار ركاز" className="w-7 h-7 object-contain shrink-0" />
                 <span className="font-bold text-foreground">عيادة ركاز</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">

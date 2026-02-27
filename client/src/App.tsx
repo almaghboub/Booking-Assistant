@@ -8,7 +8,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
-import { Stethoscope } from "lucide-react";
+import logoPath from "@assets/8747CEA0-6F16-4305-99C7-871EBFEC5EDF_1772227362124.png";
 
 import HomePage from "@/pages/home";
 import LoginPage from "@/pages/login";
@@ -81,9 +81,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
             {/* يمين: شعار العيادة (مخفي على md+ لأن الشريط الجانبي يظهره) */}
             <div className="flex items-center gap-1.5 md:invisible shrink-0">
-              <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-                <Stethoscope className="w-3.5 h-3.5 text-primary-foreground" />
-              </div>
+              <img src={logoPath} alt="شعار ركاز" className="w-6 h-6 object-contain" />
               <span className="text-xs font-bold text-foreground">ركاز</span>
             </div>
           </header>
