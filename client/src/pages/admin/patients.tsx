@@ -7,14 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Users, Phone, AlertTriangle, Calendar, Edit2, MoreHorizontal } from "lucide-react";
+import { Search, Users, Phone, AlertTriangle, Calendar, Edit2, MoreHorizontal, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Patient } from "@shared/schema";
 
 const editSchema = z.object({
@@ -62,10 +64,71 @@ function PatientEditDialog({ patient, onClose }: { patient: Patient; onClose: ()
   );
 }
 
+function PatientDetails({
+  patient,
+  history,
+  historyLoading,
+}: {
+  patient: Patient;
+  history: any[];
+  historyLoading: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center shrink-0">
+          <span className="text-lg font-bold text-muted-foreground">{patient.fullName.charAt(0)}</span>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">{patient.fullName}</p>
+          <p className="text-sm text-muted-foreground">{patient.phone}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-muted rounded-md p-3 text-center">
+          <p className="text-xl font-bold text-foreground">{patient.noShowCount ?? 0}</p>
+          <p className="text-xs text-muted-foreground">الغيابات</p>
+        </div>
+        <div className={`rounded-md p-3 text-center ${patient.isFlagged ? "bg-red-100 dark:bg-red-900/20" : "bg-green-100 dark:bg-green-900/20"}`}>
+          <p className="text-xs font-semibold mt-1" style={{ color: patient.isFlagged ? "rgb(185,28,28)" : "rgb(21,128,61)" }}>
+            {patient.isFlagged ? "محدد" : "جيد"}
+          </p>
+          <p className="text-xs text-muted-foreground">الحالة</p>
+        </div>
+      </div>
+      {patient.notes && (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">ملاحظات</p>
+          <p className="text-sm text-foreground">{patient.notes}</p>
+        </div>
+      )}
+      <div>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">سجل الزيارات</p>
+        {historyLoading ? (
+          <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-12" />)}</div>
+        ) : history.length === 0 ? (
+          <p className="text-xs text-muted-foreground">لا توجد مواعيد بعد</p>
+        ) : (
+          <div className="space-y-2">
+            {history.slice(0, 5).map((appt: any) => (
+              <div key={appt.id} className="flex items-center gap-2 text-xs">
+                <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
+                <span className="text-foreground">{appt.date} {appt.time}</span>
+                <span className="text-muted-foreground truncate">{appt.serviceName}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPatients() {
   const [search, setSearch] = useState("");
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const isMobile = useIsMobile();
 
   const { data: patients = [], isLoading } = useQuery<Patient[]>({ queryKey: ["/api/admin/patients"] });
   const { data: patientHistory = [], isLoading: historyLoading } = useQuery<any[]>({
@@ -81,7 +144,7 @@ export default function AdminPatients() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">المرضى</h1>
         <p className="text-sm text-muted-foreground mt-0.5">سجلات المرضى — عرض التاريخ وإدارة السجلات</p>
@@ -108,7 +171,7 @@ export default function AdminPatients() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="space-y-3">{[1,2,3,4].map(i => <Skeleton key={i} className="h-16" />)}</div>
+                <div className="space-y-3">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16" />)}</div>
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
                   <Users className="w-10 h-10 text-muted-foreground/50 mb-3" />
@@ -166,59 +229,15 @@ export default function AdminPatients() {
           </Card>
         </div>
 
-        {/* تفاصيل المريض */}
-        <div>
+        {/* تفاصيل المريض — Desktop فقط */}
+        <div className="hidden lg:block">
           {selectedPatient ? (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold">تفاصيل المريض</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                    <span className="text-lg font-bold text-muted-foreground">{selectedPatient.fullName.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">{selectedPatient.fullName}</p>
-                    <p className="text-sm text-muted-foreground">{selectedPatient.phone}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-muted rounded-md p-3 text-center">
-                    <p className="text-xl font-bold text-foreground">{selectedPatient.noShowCount ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">الغيابات</p>
-                  </div>
-                  <div className={`rounded-md p-3 text-center ${selectedPatient.isFlagged ? "bg-red-100 dark:bg-red-900/20" : "bg-green-100 dark:bg-green-900/20"}`}>
-                    <p className="text-xs font-semibold mt-1" style={{ color: selectedPatient.isFlagged ? "rgb(185,28,28)" : "rgb(21,128,61)" }}>
-                      {selectedPatient.isFlagged ? "محدد" : "جيد"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">الحالة</p>
-                  </div>
-                </div>
-                {selectedPatient.notes && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">ملاحظات</p>
-                    <p className="text-sm text-foreground">{selectedPatient.notes}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">سجل الزيارات</p>
-                  {historyLoading ? (
-                    <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} className="h-12" />)}</div>
-                  ) : patientHistory.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">لا توجد مواعيد بعد</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {patientHistory.slice(0, 5).map((appt: any) => (
-                        <div key={appt.id} className="flex items-center gap-2 text-xs">
-                          <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
-                          <span className="text-foreground">{appt.date} {appt.time}</span>
-                          <span className="text-muted-foreground truncate">{appt.serviceName}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              <CardContent>
+                <PatientDetails patient={selectedPatient} history={patientHistory} historyLoading={historyLoading} />
               </CardContent>
             </Card>
           ) : (
@@ -232,6 +251,19 @@ export default function AdminPatients() {
         </div>
       </div>
 
+      {/* Sheet تفاصيل المريض — Mobile فقط */}
+      <Sheet open={isMobile && !!selectedPatient} onOpenChange={open => { if (!open) setSelectedPatient(null); }}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto" data-testid="sheet-patient-details">
+          <SheetHeader className="pb-4">
+            <SheetTitle>تفاصيل المريض</SheetTitle>
+          </SheetHeader>
+          {selectedPatient && (
+            <PatientDetails patient={selectedPatient} history={patientHistory} historyLoading={historyLoading} />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Dialog تعديل المريض */}
       <Dialog open={!!editingPatient} onOpenChange={() => setEditingPatient(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>تعديل المريض</DialogTitle></DialogHeader>

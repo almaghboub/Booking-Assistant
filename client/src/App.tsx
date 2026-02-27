@@ -5,8 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
+import { Stethoscope } from "lucide-react";
 
 import HomePage from "@/pages/home";
 import LoginPage from "@/pages/login";
@@ -23,9 +25,22 @@ import DoctorAppointments from "@/pages/doctor/appointments";
 import DoctorPatients from "@/pages/doctor/patients";
 import NotFound from "@/pages/not-found";
 
+const PAGE_TITLES: Record<string, string> = {
+  "/admin": "لوحة التحكم",
+  "/admin/appointments": "المواعيد",
+  "/admin/doctors": "الأطباء",
+  "/admin/services": "الخدمات",
+  "/admin/patients": "المرضى",
+  "/admin/analytics": "التحليلات",
+  "/admin/settings": "الإعدادات",
+  "/doctor": "جدول مواعيدي",
+  "/doctor/appointments": "مواعيدي",
+  "/doctor/patients": "مرضاي",
+};
+
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
 
   if (isLoading) {
     return (
@@ -39,6 +54,8 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return <Redirect to="/login" />;
   }
 
+  const pageTitle = PAGE_TITLES[location] ?? "عيادة ركاز";
+
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
@@ -49,13 +66,35 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between px-4 py-2 border-b border-border bg-background shrink-0 h-12">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
+          {/* ── الرأس ── */}
+          <header className="flex items-center justify-between px-3 border-b border-border bg-background shrink-0 h-14 gap-2">
+            {/* يسار: زر الشريط الجانبي + تبديل السمة */}
+            <div className="flex items-center gap-1 shrink-0">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <ThemeToggle />
+            </div>
+
+            {/* وسط: عنوان الصفحة */}
+            <p className="text-sm font-semibold text-foreground truncate text-center flex-1">
+              {pageTitle}
+            </p>
+
+            {/* يمين: شعار العيادة (مخفي على md+ لأن الشريط الجانبي يظهره) */}
+            <div className="flex items-center gap-1.5 md:invisible shrink-0">
+              <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
+                <Stethoscope className="w-3.5 h-3.5 text-primary-foreground" />
+              </div>
+              <span className="text-xs font-bold text-foreground">ركاز</span>
+            </div>
           </header>
-          <main className="flex-1 overflow-y-auto">
+
+          {/* ── المحتوى الرئيسي ── */}
+          <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
             {children}
           </main>
+
+          {/* ── شريط التنقل السفلي (موبايل فقط) ── */}
+          <MobileBottomNav />
         </div>
       </div>
     </SidebarProvider>

@@ -114,15 +114,17 @@ export default function AdminAnalytics() {
             {dailyData.length === 0 ? (
               <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">لا توجد بيانات بعد</div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={dailyData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="hsl(210 85% 42%)" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="overflow-x-auto">
+                <ResponsiveContainer width="100%" minWidth={320} height={200}>
+                  <BarChart data={dailyData} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(210 85% 42%)" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -136,25 +138,27 @@ export default function AdminAnalytics() {
             {statusData.length === 0 ? (
               <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">لا توجد بيانات بعد</div>
             ) : (
-              <div className="flex items-center gap-4">
-                <ResponsiveContainer width="60%" height={180}>
-                  <PieChart>
-                    <Pie data={statusData} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={45} outerRadius={75}>
-                      {statusData.map((_: any, index: number) => (
-                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2">
-                  {statusData.map((item: any, i: number) => (
-                    <div key={item.status} className="flex items-center gap-2 text-xs">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                      <span className="text-muted-foreground">{statusLabelsAr[item.status] ?? item.status}</span>
-                      <span className="font-medium text-foreground mr-auto">{item.count}</span>
-                    </div>
-                  ))}
+              <div className="overflow-x-auto">
+                <div className="flex items-center gap-4 min-w-[280px]">
+                  <ResponsiveContainer width="60%" height={180}>
+                    <PieChart>
+                      <Pie data={statusData} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={45} outerRadius={75}>
+                        {statusData.map((_: any, index: number) => (
+                          <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-2 shrink-0">
+                    {statusData.map((item: any, i: number) => (
+                      <div key={item.status} className="flex items-center gap-2 text-xs">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                        <span className="text-muted-foreground">{statusLabelsAr[item.status] ?? item.status}</span>
+                        <span className="font-medium text-foreground mr-auto">{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -170,15 +174,17 @@ export default function AdminAnalytics() {
             {serviceData.length === 0 ? (
               <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">لا توجد بيانات بعد</div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={serviceData} layout="vertical" margin={{ top: 4, right: 4, bottom: 4, left: 80 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="hsl(195 75% 38%)" radius={[0, 3, 3, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="overflow-x-auto">
+                <ResponsiveContainer width="100%" minWidth={320} height={200}>
+                  <BarChart data={serviceData} layout="vertical" margin={{ top: 4, right: 4, bottom: 4, left: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="hsl(195 75% 38%)" radius={[0, 3, 3, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -192,15 +198,17 @@ export default function AdminAnalytics() {
             {peakHours.length === 0 ? (
               <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">لا توجد بيانات بعد</div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={peakHours} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="count" stroke="hsl(210 85% 42%)" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="overflow-x-auto">
+                <ResponsiveContainer width="100%" minWidth={320} height={200}>
+                  <LineChart data={peakHours} margin={{ top: 4, right: 4, bottom: 4, left: -20 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="count" stroke="hsl(210 85% 42%)" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>

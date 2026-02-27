@@ -250,8 +250,8 @@ export default function AdminSettings() {
           {/* جدول نقاط النهاية */}
           <div className="space-y-2 pt-1">
             <p className="text-sm font-medium text-foreground">نقاط النهاية المتاحة</p>
-            <div className="rounded-md border border-border overflow-hidden">
-              <table className="w-full text-xs">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="w-full text-xs min-w-[520px]">
                 <thead className="bg-muted/50">
                   <tr>
                     <th className="px-3 py-2 text-right font-medium text-muted-foreground w-16">الطريقة</th>

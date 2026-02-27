@@ -138,9 +138,9 @@ export default function AdminAppointments() {
                         <Calendar className="w-3 h-3" />
                         {appt.date} — {appt.time}
                       </span>
-                      <span className="text-xs text-muted-foreground">{appt.doctorName}</span>
-                      <span className="text-xs text-muted-foreground">{appt.serviceName}</span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">{appt.doctorName}</span>
+                      <span className="text-xs text-muted-foreground hidden sm:inline">{appt.serviceName}</span>
+                      <span className="text-xs text-muted-foreground hidden sm:flex items-center gap-1">
                         <Phone className="w-3 h-3" />{appt.patientPhone}
                       </span>
                     </div>
