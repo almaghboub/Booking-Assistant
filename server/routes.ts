@@ -358,6 +358,39 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     return res.json(pats.filter(Boolean));
   });
 
+  app.post("/api/doctor/appointments", requireDoctor, async (req, res) => {
+    const doctorId = (req.session as any).doctorId;
+    const data = req.body;
+    const CLINIC_ID = "clinic-1";
+
+    let patient = await storage.getPatientByPhone(CLINIC_ID, data.patientPhone);
+    if (!patient) {
+      patient = await storage.createPatient({
+        clinicId: CLINIC_ID,
+        fullName: data.patientName,
+        phone: data.patientPhone,
+        notes: "",
+        noShowCount: 0,
+        isFlagged: false,
+      });
+    }
+
+    const appt = await storage.createAppointment({
+      clinicId: CLINIC_ID,
+      doctorId,
+      serviceId: data.serviceId,
+      patientId: patient.id,
+      patientName: data.patientName,
+      patientPhone: data.patientPhone,
+      date: data.date,
+      time: data.time,
+      notes: data.notes || "",
+      status: "confirmed",
+    });
+
+    return res.json(appt);
+  });
+
   app.post("/api/doctor/arrived", requireDoctor, async (req, res) => {
     // Simulate WhatsApp notification - in production this calls the WhatsApp API
     const doctorId = (req.session as any).doctorId;

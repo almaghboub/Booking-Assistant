@@ -1,16 +1,23 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, CheckCircle, XCircle, Bell, User, Phone, AlertCircle, Link2, Copy, Check, Share2 } from "lucide-react";
-import { format, addDays, startOfWeek } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Clock, CheckCircle, Bell, User, Phone, Share2, Copy, Check, PhoneIncoming, Plus } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { Service } from "@shared/schema";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   pending_confirmation: { label: "Pending", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
@@ -20,27 +27,29 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   no_show: { label: "No Show", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" },
 };
 
+const phoneBookingSchema = z.object({
+  patientName: z.string().min(2, "Name must be at least 2 characters"),
+  patientPhone: z.string().min(8, "Please enter a valid phone number"),
+  serviceId: z.string().min(1, "Please select a service"),
+  date: z.string().min(1, "Please select a date"),
+  time: z.string().min(1, "Please select a time"),
+  notes: z.string().optional(),
+});
+
+type PhoneBookingForm = z.infer<typeof phoneBookingSchema>;
+
+const CLINIC_ID = "clinic-1";
+
 export default function DoctorDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [arrivedDialogOpen, setArrivedDialogOpen] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const bookingLink = user?.doctorId
     ? `${window.location.origin}/book?doctor=${user.doctorId}`
     : "";
-
-  const handleCopyLink = async () => {
-    if (!bookingLink) return;
-    try {
-      await navigator.clipboard.writeText(bookingLink);
-      setCopied(true);
-      toast({ title: "Link copied!", description: "Share this link with your patients." });
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({ title: "Copy failed", description: "Please copy the link manually.", variant: "destructive" });
-    }
-  };
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -52,12 +61,51 @@ export default function DoctorDashboard() {
     queryKey: ["/api/doctor/appointments/week"],
   });
 
+  const { data: myServices = [] } = useQuery<Service[]>({
+    queryKey: ["/api/public/services", user?.doctorId],
+    queryFn: () => fetch(`/api/public/services?clinicId=${CLINIC_ID}&doctorId=${user?.doctorId}`).then(r => r.json()),
+    enabled: !!user?.doctorId,
+  });
+
+  const form = useForm<PhoneBookingForm>({
+    resolver: zodResolver(phoneBookingSchema),
+    defaultValues: { patientName: "", patientPhone: "", serviceId: "", date: "", time: "", notes: "" },
+  });
+
+  const watchedDate = form.watch("date");
+  const watchedServiceId = form.watch("serviceId");
+
+  const { data: availableSlots = [], isLoading: loadingSlots } = useQuery<string[]>({
+    queryKey: ["/api/public/slots", user?.doctorId, watchedDate, watchedServiceId],
+    queryFn: () => fetch(`/api/public/slots?doctorId=${user?.doctorId}&date=${watchedDate}&serviceId=${watchedServiceId}`).then(r => r.json()),
+    enabled: !!user?.doctorId && !!watchedDate && !!watchedServiceId,
+  });
+
+  const next14Days = Array.from({ length: 14 }, (_, i) => {
+    const d = addDays(new Date(), i + 1);
+    return { value: format(d, "yyyy-MM-dd"), label: format(d, "EEE, MMM d") };
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       apiRequest("PATCH", `/api/doctor/appointments/${id}/status`, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/appointments"] });
       toast({ title: "Appointment updated" });
+    },
+  });
+
+  const phoneBookingMutation = useMutation({
+    mutationFn: (data: PhoneBookingForm) =>
+      apiRequest("POST", "/api/doctor/appointments", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/appointments"] });
+      toast({ title: "Booking created", description: "Phone booking has been added and confirmed." });
+      form.reset();
+      setBookingDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to create booking", variant: "destructive" });
     },
   });
 
@@ -72,8 +120,25 @@ export default function DoctorDashboard() {
   const confirmedToday = todayAppts.filter(a => a.status === "confirmed").length;
   const completedToday = todayAppts.filter(a => a.status === "completed").length;
 
+  const handleCopyLink = async () => {
+    if (!bookingLink) return;
+    try {
+      await navigator.clipboard.writeText(bookingLink);
+      setCopied(true);
+      toast({ title: "Link copied!", description: "Share this link with your patients." });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Copy failed", description: "Please copy the link manually.", variant: "destructive" });
+    }
+  };
+
+  const onSubmitPhoneBooking = (data: PhoneBookingForm) => {
+    phoneBookingMutation.mutate(data);
+  };
+
   return (
     <div className="p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-foreground">My Schedule</h1>
@@ -81,14 +146,25 @@ export default function DoctorDashboard() {
             {format(new Date(), "EEEE, MMMM d, yyyy")}
           </p>
         </div>
-        <Button
-          onClick={() => setArrivedDialogOpen(true)}
-          className="bg-green-600 dark:bg-green-700 text-white border-0"
-          data-testid="button-doctor-arrived"
-        >
-          <Bell className="w-4 h-4 mr-2" />
-          Doctor Arrived
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => setBookingDialogOpen(true)}
+            className="gap-2"
+            data-testid="button-phone-booking"
+          >
+            <PhoneIncoming className="w-4 h-4" />
+            Book by Phone
+          </Button>
+          <Button
+            onClick={() => setArrivedDialogOpen(true)}
+            className="bg-green-600 dark:bg-green-700 text-white border-0 gap-2"
+            data-testid="button-doctor-arrived"
+          >
+            <Bell className="w-4 h-4" />
+            Doctor Arrived
+          </Button>
+        </div>
       </div>
 
       {/* Shareable Booking Link */}
@@ -169,6 +245,9 @@ export default function DoctorDashboard() {
                 <div className="flex flex-col items-center py-12 text-center">
                   <Calendar className="w-10 h-10 text-muted-foreground/50 mb-3" />
                   <p className="text-sm text-muted-foreground">No appointments today</p>
+                  <Button variant="outline" size="sm" className="mt-3 gap-2" onClick={() => setBookingDialogOpen(true)}>
+                    <Plus className="w-4 h-4" />Add Phone Booking
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -267,6 +346,165 @@ export default function DoctorDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* ── Phone Booking Dialog ── */}
+      <Dialog open={bookingDialogOpen} onOpenChange={(open) => { setBookingDialogOpen(open); if (!open) form.reset(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PhoneIncoming className="w-5 h-5 text-primary" />
+              Book by Phone
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(onSubmitPhoneBooking)} className="space-y-4 pt-1">
+
+            {/* Patient Name */}
+            <div className="space-y-1.5">
+              <Label htmlFor="phone-patient-name">Patient Name</Label>
+              <div className="relative">
+                <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="phone-patient-name"
+                  className="pl-9"
+                  placeholder="Full name"
+                  data-testid="input-phone-patient-name"
+                  {...form.register("patientName")}
+                />
+              </div>
+              {form.formState.errors.patientName && (
+                <p className="text-xs text-destructive">{form.formState.errors.patientName.message}</p>
+              )}
+            </div>
+
+            {/* Patient Phone */}
+            <div className="space-y-1.5">
+              <Label htmlFor="phone-patient-phone">Phone / WhatsApp</Label>
+              <div className="relative">
+                <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="phone-patient-phone"
+                  className="pl-9"
+                  placeholder="+218 91 234 5678"
+                  data-testid="input-phone-patient-phone"
+                  {...form.register("patientPhone")}
+                />
+              </div>
+              {form.formState.errors.patientPhone && (
+                <p className="text-xs text-destructive">{form.formState.errors.patientPhone.message}</p>
+              )}
+            </div>
+
+            {/* Service */}
+            <div className="space-y-1.5">
+              <Label>Service</Label>
+              <Select
+                value={form.watch("serviceId")}
+                onValueChange={(val) => { form.setValue("serviceId", val); form.setValue("time", ""); }}
+              >
+                <SelectTrigger data-testid="select-phone-service">
+                  <SelectValue placeholder="Select a service" />
+                </SelectTrigger>
+                <SelectContent>
+                  {myServices.map(svc => (
+                    <SelectItem key={svc.id} value={svc.id} data-testid={`option-service-${svc.id}`}>
+                      {svc.name} ({svc.duration} min)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.serviceId && (
+                <p className="text-xs text-destructive">{form.formState.errors.serviceId.message}</p>
+              )}
+            </div>
+
+            {/* Date */}
+            <div className="space-y-1.5">
+              <Label>Date</Label>
+              <Select
+                value={form.watch("date")}
+                onValueChange={(val) => { form.setValue("date", val); form.setValue("time", ""); }}
+              >
+                <SelectTrigger data-testid="select-phone-date">
+                  <SelectValue placeholder="Select a date" />
+                </SelectTrigger>
+                <SelectContent>
+                  {next14Days.map(d => (
+                    <SelectItem key={d.value} value={d.value} data-testid={`option-date-${d.value}`}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.date && (
+                <p className="text-xs text-destructive">{form.formState.errors.date.message}</p>
+              )}
+            </div>
+
+            {/* Time */}
+            <div className="space-y-1.5">
+              <Label>Time Slot</Label>
+              {!watchedDate || !watchedServiceId ? (
+                <p className="text-xs text-muted-foreground py-1">Select a service and date first</p>
+              ) : loadingSlots ? (
+                <div className="h-9 bg-muted animate-pulse rounded-md" />
+              ) : availableSlots.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-1">No available slots for this date</p>
+              ) : (
+                <Select
+                  value={form.watch("time")}
+                  onValueChange={(val) => form.setValue("time", val)}
+                >
+                  <SelectTrigger data-testid="select-phone-time">
+                    <SelectValue placeholder="Select a time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map(slot => (
+                      <SelectItem key={slot} value={slot} data-testid={`option-time-${slot}`}>
+                        {slot}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {form.formState.errors.time && (
+                <p className="text-xs text-destructive">{form.formState.errors.time.message}</p>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1.5">
+              <Label htmlFor="phone-notes">Notes (optional)</Label>
+              <Input
+                id="phone-notes"
+                placeholder="Reason for visit, special notes…"
+                data-testid="input-phone-notes"
+                {...form.register("notes")}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex-1"
+                onClick={() => { setBookingDialogOpen(false); form.reset(); }}
+                data-testid="button-cancel-phone-booking"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 gap-2"
+                disabled={phoneBookingMutation.isPending}
+                data-testid="button-submit-phone-booking"
+              >
+                <Plus className="w-4 h-4" />
+                {phoneBookingMutation.isPending ? "Booking…" : "Confirm Booking"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Doctor Arrived Dialog */}
       <Dialog open={arrivedDialogOpen} onOpenChange={setArrivedDialogOpen}>
