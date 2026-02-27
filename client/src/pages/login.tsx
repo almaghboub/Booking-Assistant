@@ -11,8 +11,8 @@ import { Stethoscope, AlertCircle } from "lucide-react";
 import { useEffect } from "react";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
+  username: z.string().min(1, "اسم المستخدم مطلوب"),
+  password: z.string().min(1, "كلمة المرور مطلوبة"),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -49,19 +49,19 @@ export default function LoginPage() {
           <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center mb-4">
             <Stethoscope className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Rakaz Clinic</h1>
-          <p className="text-sm text-muted-foreground mt-1">Smart Appointment Management</p>
+          <h1 className="text-2xl font-bold text-foreground">عيادة ركاز</h1>
+          <p className="text-sm text-muted-foreground mt-1">إدارة المواعيد الذكية</p>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Sign in to your account</CardTitle>
-            <CardDescription>Enter your credentials to continue</CardDescription>
+            <CardTitle className="text-lg">تسجيل الدخول</CardTitle>
+            <CardDescription>أدخل بيانات الاعتماد للمتابعة</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">اسم المستخدم</Label>
                 <Input
                   id="username"
                   placeholder="admin"
@@ -74,7 +74,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">كلمة المرور</Label>
                 <Input
                   id="password"
                   type="password"
@@ -90,7 +90,7 @@ export default function LoginPage() {
               {loginError && (
                 <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>Invalid username or password</span>
+                  <span>اسم المستخدم أو كلمة المرور غير صحيحة</span>
                 </div>
               )}
 
@@ -100,24 +100,24 @@ export default function LoginPage() {
                 disabled={isLoggingIn}
                 data-testid="button-login"
               >
-                {isLoggingIn ? "Signing in..." : "Sign in"}
+                {isLoggingIn ? "جارٍ الدخول..." : "تسجيل الدخول"}
               </Button>
             </form>
 
             <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-2">Demo credentials:</p>
+              <p className="text-xs text-muted-foreground mb-2">بيانات تجريبية:</p>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Admin: <span className="font-mono text-foreground">admin / admin123</span></p>
-                <p className="text-xs text-muted-foreground">Doctor: <span className="font-mono text-foreground">doctor1 / doctor123</span></p>
+                <p className="text-xs text-muted-foreground">المدير: <span className="font-mono text-foreground">admin / admin123</span></p>
+                <p className="text-xs text-muted-foreground">طبيب: <span className="font-mono text-foreground">doctor1 / doctor123</span></p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Want to book an appointment?{" "}
+          تريد حجز موعد؟{" "}
           <a href="/book" className="text-primary underline-offset-2 hover:underline">
-            Book here
+            احجز هنا
           </a>
         </p>
       </div>

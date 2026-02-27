@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Clock, TrendingUp, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar, Users, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const statusColors: Record<string, string> = {
@@ -14,11 +15,11 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  pending_confirmation: "Pending",
-  confirmed: "Confirmed",
-  completed: "Completed",
-  cancelled: "Cancelled",
-  no_show: "No Show",
+  pending_confirmation: "قيد الانتظار",
+  confirmed: "مؤكد",
+  completed: "مكتمل",
+  cancelled: "ملغي",
+  no_show: "لم يحضر",
 };
 
 export default function AdminDashboard() {
@@ -30,16 +31,16 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/appointments/today"],
   });
 
-  const today = format(new Date(), "EEEE, MMMM d, yyyy");
+  const today = format(new Date(), "EEEE، d MMMM yyyy", { locale: ar });
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">لوحة التحكم</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{today}</p>
       </div>
 
-      {/* Stats Cards */}
+      {/* بطاقات الإحصاءات */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statsLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -51,11 +52,11 @@ export default function AdminDashboard() {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-xs text-muted-foreground">Today's Appointments</p>
+                    <p className="text-xs text-muted-foreground">مواعيد اليوم</p>
                     <p className="text-3xl font-bold text-foreground mt-1">{stats?.todayCount ?? 0}</p>
                   </div>
                   <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                    <Calendar className="w-4.5 h-4.5 text-primary" />
+                    <Calendar className="w-4 h-4 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -64,11 +65,11 @@ export default function AdminDashboard() {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-xs text-muted-foreground">Total Patients</p>
+                    <p className="text-xs text-muted-foreground">إجمالي المرضى</p>
                     <p className="text-3xl font-bold text-foreground mt-1">{stats?.patientCount ?? 0}</p>
                   </div>
                   <div className="w-9 h-9 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                    <Users className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
+                    <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </CardContent>
@@ -77,11 +78,11 @@ export default function AdminDashboard() {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-xs text-muted-foreground">Confirmed Today</p>
+                    <p className="text-xs text-muted-foreground">مؤكدة اليوم</p>
                     <p className="text-3xl font-bold text-foreground mt-1">{stats?.confirmedToday ?? 0}</p>
                   </div>
                   <div className="w-9 h-9 rounded-md bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                    <CheckCircle className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
               </CardContent>
@@ -90,11 +91,11 @@ export default function AdminDashboard() {
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-xs text-muted-foreground">This Month</p>
+                    <p className="text-xs text-muted-foreground">هذا الشهر</p>
                     <p className="text-3xl font-bold text-foreground mt-1">{stats?.monthCount ?? 0}</p>
                   </div>
                   <div className="w-9 h-9 rounded-md bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-4.5 h-4.5 text-purple-600 dark:text-purple-400" />
+                    <TrendingUp className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   </div>
                 </div>
               </CardContent>
@@ -103,11 +104,11 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Today's Appointments */}
+      {/* جدول اليوم */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
-          <CardTitle className="text-base font-semibold">Today's Schedule</CardTitle>
-          <Badge variant="secondary" data-testid="text-today-count">{todayAppts.length} appointments</Badge>
+          <CardTitle className="text-base font-semibold">جدول اليوم</CardTitle>
+          <Badge variant="secondary" data-testid="text-today-count">{todayAppts.length} موعد</Badge>
         </CardHeader>
         <CardContent>
           {apptLoading ? (
@@ -117,8 +118,8 @@ export default function AdminDashboard() {
           ) : todayAppts.length === 0 ? (
             <div className="flex flex-col items-center py-10 text-center">
               <Clock className="w-10 h-10 text-muted-foreground/50 mb-3" />
-              <p className="text-sm font-medium text-muted-foreground">No appointments today</p>
-              <p className="text-xs text-muted-foreground mt-1">Appointments for today will appear here</p>
+              <p className="text-sm font-medium text-muted-foreground">لا توجد مواعيد اليوم</p>
+              <p className="text-xs text-muted-foreground mt-1">ستظهر مواعيد اليوم هنا</p>
             </div>
           ) : (
             <div className="space-y-2">

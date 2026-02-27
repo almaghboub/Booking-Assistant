@@ -16,7 +16,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import type { Patient } from "@shared/schema";
-import { format } from "date-fns";
 
 const editSchema = z.object({
   fullName: z.string().min(2),
@@ -35,28 +34,28 @@ function PatientEditDialog({ patient, onClose }: { patient: Patient; onClose: ()
     mutationFn: (data: EditForm) => apiRequest("PATCH", `/api/admin/patients/${patient.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/patients"] });
-      toast({ title: "Patient updated" });
+      toast({ title: "تم تحديث بيانات المريض" });
       onClose();
     },
   });
   return (
     <form onSubmit={form.handleSubmit(d => mutation.mutate(d))} className="space-y-4 mt-2">
       <div className="space-y-1.5">
-        <Label>Full Name</Label>
+        <Label>الاسم الكامل</Label>
         <Input {...form.register("fullName")} data-testid="input-edit-patient-name" />
       </div>
       <div className="space-y-1.5">
-        <Label>Phone</Label>
+        <Label>الهاتف</Label>
         <Input {...form.register("phone")} data-testid="input-edit-patient-phone" />
       </div>
       <div className="space-y-1.5">
-        <Label>Notes</Label>
+        <Label>ملاحظات</Label>
         <Textarea {...form.register("notes")} data-testid="input-edit-patient-notes" />
       </div>
-      <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+      <div className="flex justify-start gap-3 pt-2">
+        <Button type="button" variant="ghost" onClick={onClose}>إلغاء</Button>
         <Button type="submit" disabled={mutation.isPending} data-testid="button-save-patient">
-          {mutation.isPending ? "Saving..." : "Save Changes"}
+          {mutation.isPending ? "جارٍ الحفظ..." : "حفظ التغييرات"}
         </Button>
       </div>
     </form>
@@ -84,15 +83,15 @@ export default function AdminPatients() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Patients</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Patient CRM — view history and manage records</p>
+        <h1 className="text-2xl font-bold text-foreground">المرضى</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">سجلات المرضى — عرض التاريخ وإدارة السجلات</p>
       </div>
 
       <div className="relative max-w-sm">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search by name or phone..."
-          className="pl-9"
+          placeholder="البحث بالاسم أو الهاتف..."
+          className="pr-9"
           value={search}
           onChange={e => setSearch(e.target.value)}
           data-testid="input-search-patients"
@@ -100,12 +99,12 @@ export default function AdminPatients() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Patient List */}
+        {/* قائمة المرضى */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
-              <CardTitle className="text-base font-semibold">All Patients</CardTitle>
-              <span className="text-sm text-muted-foreground">{filtered.length} patients</span>
+              <CardTitle className="text-base font-semibold">جميع المرضى</CardTitle>
+              <span className="text-sm text-muted-foreground">{filtered.length} مريض</span>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -113,7 +112,7 @@ export default function AdminPatients() {
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
                   <Users className="w-10 h-10 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground">No patients found</p>
+                  <p className="text-sm text-muted-foreground">لا يوجد مرضى</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -133,8 +132,8 @@ export default function AdminPatients() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold text-foreground truncate">{patient.fullName}</p>
                           {patient.isFlagged && (
-                            <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-xs">
-                              <AlertTriangle className="w-3 h-3 mr-1" />Flagged
+                            <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-xs gap-1">
+                              <AlertTriangle className="w-3 h-3" />محدد
                             </Badge>
                           )}
                         </div>
@@ -143,7 +142,7 @@ export default function AdminPatients() {
                             <Phone className="w-3 h-3" />{patient.phone}
                           </span>
                           {(patient.noShowCount ?? 0) > 0 && (
-                            <span className="text-xs text-muted-foreground">{patient.noShowCount} no-shows</span>
+                            <span className="text-xs text-muted-foreground">{patient.noShowCount} غياب</span>
                           )}
                         </div>
                       </div>
@@ -155,7 +154,7 @@ export default function AdminPatients() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={e => { e.stopPropagation(); setEditingPatient(patient); }}>
-                            <Edit2 className="w-4 h-4 mr-2" />Edit
+                            <Edit2 className="w-4 h-4 ml-2" />تعديل
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -167,12 +166,12 @@ export default function AdminPatients() {
           </Card>
         </div>
 
-        {/* Patient Detail */}
+        {/* تفاصيل المريض */}
         <div>
           {selectedPatient ? (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Patient Details</CardTitle>
+                <CardTitle className="text-base font-semibold">تفاصيل المريض</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -187,27 +186,27 @@ export default function AdminPatients() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-muted rounded-md p-3 text-center">
                     <p className="text-xl font-bold text-foreground">{selectedPatient.noShowCount ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">No Shows</p>
+                    <p className="text-xs text-muted-foreground">الغيابات</p>
                   </div>
                   <div className={`rounded-md p-3 text-center ${selectedPatient.isFlagged ? "bg-red-100 dark:bg-red-900/20" : "bg-green-100 dark:bg-green-900/20"}`}>
                     <p className="text-xs font-semibold mt-1" style={{ color: selectedPatient.isFlagged ? "rgb(185,28,28)" : "rgb(21,128,61)" }}>
-                      {selectedPatient.isFlagged ? "FLAGGED" : "GOOD"}
+                      {selectedPatient.isFlagged ? "محدد" : "جيد"}
                     </p>
-                    <p className="text-xs text-muted-foreground">Status</p>
+                    <p className="text-xs text-muted-foreground">الحالة</p>
                   </div>
                 </div>
                 {selectedPatient.notes && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Notes</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">ملاحظات</p>
                     <p className="text-sm text-foreground">{selectedPatient.notes}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Visit History</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">سجل الزيارات</p>
                   {historyLoading ? (
                     <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} className="h-12" />)}</div>
                   ) : patientHistory.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No appointments yet</p>
+                    <p className="text-xs text-muted-foreground">لا توجد مواعيد بعد</p>
                   ) : (
                     <div className="space-y-2">
                       {patientHistory.slice(0, 5).map((appt: any) => (
@@ -226,7 +225,7 @@ export default function AdminPatients() {
             <Card>
               <CardContent className="flex flex-col items-center py-12 text-center">
                 <Users className="w-10 h-10 text-muted-foreground/50 mb-3" />
-                <p className="text-sm text-muted-foreground">Select a patient to view details</p>
+                <p className="text-sm text-muted-foreground">اختر مريضاً لعرض تفاصيله</p>
               </CardContent>
             </Card>
           )}
@@ -235,7 +234,7 @@ export default function AdminPatients() {
 
       <Dialog open={!!editingPatient} onOpenChange={() => setEditingPatient(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Patient</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>تعديل المريض</DialogTitle></DialogHeader>
           {editingPatient && <PatientEditDialog patient={editingPatient} onClose={() => setEditingPatient(null)} />}
         </DialogContent>
       </Dialog>

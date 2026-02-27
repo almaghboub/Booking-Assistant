@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Users, Phone, Calendar, AlertTriangle } from "lucide-react";
+import { Search, Users, Phone, AlertTriangle } from "lucide-react";
 import type { Patient } from "@shared/schema";
 
 export default function DoctorPatients() {
@@ -22,14 +22,14 @@ export default function DoctorPatients() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">My Patients</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Patients you have seen or have upcoming appointments with</p>
+        <h1 className="text-2xl font-bold text-foreground">مرضاي</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">المرضى الذين زاروك أو لديهم مواعيد قادمة</p>
       </div>
       <div className="relative max-w-sm">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search by name or phone..."
-          className="pl-9"
+          placeholder="البحث بالاسم أو الهاتف..."
+          className="pr-9"
           value={search}
           onChange={e => setSearch(e.target.value)}
           data-testid="input-search-patients"
@@ -37,8 +37,8 @@ export default function DoctorPatients() {
       </div>
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
-          <CardTitle className="text-base font-semibold">Patients</CardTitle>
-          <span className="text-sm text-muted-foreground">{filtered.length} patients</span>
+          <CardTitle className="text-base font-semibold">المرضى</CardTitle>
+          <span className="text-sm text-muted-foreground">{filtered.length} مريض</span>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -46,7 +46,7 @@ export default function DoctorPatients() {
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
               <Users className="w-10 h-10 text-muted-foreground/50 mb-3" />
-              <p className="text-sm text-muted-foreground">No patients found</p>
+              <p className="text-sm text-muted-foreground">لا يوجد مرضى</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -62,7 +62,7 @@ export default function DoctorPatients() {
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{p.phone}</span>
-                      {(p.noShowCount ?? 0) > 0 && <span className="text-xs text-muted-foreground">{p.noShowCount} no-shows</span>}
+                      {(p.noShowCount ?? 0) > 0 && <span className="text-xs text-muted-foreground">{p.noShowCount} غياب</span>}
                     </div>
                   </div>
                 </div>

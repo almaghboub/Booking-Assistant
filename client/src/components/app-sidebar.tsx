@@ -28,19 +28,19 @@ import { Button } from "@/components/ui/button";
 import { useLocation as useWouterLocation } from "wouter";
 
 const adminItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Appointments", url: "/admin/appointments", icon: Calendar },
-  { title: "Doctors", url: "/admin/doctors", icon: Stethoscope },
-  { title: "Services", url: "/admin/services", icon: ClipboardList },
-  { title: "Patients", url: "/admin/patients", icon: Users },
-  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "لوحة التحكم", url: "/admin", icon: LayoutDashboard },
+  { title: "المواعيد", url: "/admin/appointments", icon: Calendar },
+  { title: "الأطباء", url: "/admin/doctors", icon: Stethoscope },
+  { title: "الخدمات", url: "/admin/services", icon: ClipboardList },
+  { title: "المرضى", url: "/admin/patients", icon: Users },
+  { title: "التحليلات", url: "/admin/analytics", icon: BarChart3 },
+  { title: "الإعدادات", url: "/admin/settings", icon: Settings },
 ];
 
 const doctorItems = [
-  { title: "My Schedule", url: "/doctor", icon: CalendarDays },
-  { title: "Appointments", url: "/doctor/appointments", icon: Calendar },
-  { title: "Patients", url: "/doctor/patients", icon: UserCheck },
+  { title: "جدول مواعيدي", url: "/doctor", icon: CalendarDays },
+  { title: "مواعيدي", url: "/doctor/appointments", icon: Calendar },
+  { title: "مرضاي", url: "/doctor/patients", icon: UserCheck },
 ];
 
 export function AppSidebar() {
@@ -58,12 +58,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-sidebar-primary flex items-center justify-center">
+          <div className="w-8 h-8 rounded-md bg-sidebar-primary flex items-center justify-center shrink-0">
             <Stethoscope className="w-4 h-4 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <p className="font-semibold text-sm text-sidebar-foreground leading-tight">Rakaz Clinic</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role?.replace("_", " ")}</p>
+            <p className="font-semibold text-sm text-sidebar-foreground leading-tight">عيادة ركاز</p>
+            <p className="text-xs text-muted-foreground">
+              {user?.role === "clinic_admin" ? "مدير العيادة" : user?.role === "doctor" ? "طبيب" : ""}
+            </p>
           </div>
         </div>
       </SidebarHeader>
@@ -71,7 +73,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground px-3 pt-4 pb-1">
-            Navigation
+            التنقل
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -97,12 +99,14 @@ export function AppSidebar() {
         <div className="flex items-center gap-3 px-2 py-2 rounded-md">
           <div className="w-7 h-7 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
             <span className="text-xs font-semibold text-sidebar-accent-foreground">
-              {user?.fullName?.charAt(0) || user?.username?.charAt(0) || "U"}
+              {user?.fullName?.charAt(0) || user?.username?.charAt(0) || "م"}
             </span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.fullName || user?.username}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role?.replace("_", " ")}</p>
+            <p className="text-xs text-muted-foreground">
+              {user?.role === "clinic_admin" ? "مدير" : user?.role === "doctor" ? "طبيب" : ""}
+            </p>
           </div>
           <Button
             size="icon"
@@ -110,6 +114,7 @@ export function AppSidebar() {
             onClick={handleLogout}
             data-testid="button-logout"
             className="shrink-0"
+            title="تسجيل الخروج"
           >
             <LogOut className="w-3.5 h-3.5" />
           </Button>

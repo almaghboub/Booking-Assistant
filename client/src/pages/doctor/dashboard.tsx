@@ -14,25 +14,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, CheckCircle, Bell, User, Phone, Share2, Copy, Check, PhoneIncoming, Plus, CalendarDays, Link2, Unlink } from "lucide-react";
 import { format, addDays } from "date-fns";
+import { ar } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Service } from "@shared/schema";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  pending_confirmation: { label: "Pending", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
-  confirmed: { label: "Confirmed", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
-  completed: { label: "Completed", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-  cancelled: { label: "Cancelled", className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
-  no_show: { label: "No Show", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" },
+  pending_confirmation: { label: "قيد الانتظار", className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
+  confirmed: { label: "مؤكد", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+  completed: { label: "مكتمل", className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  cancelled: { label: "ملغي", className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
+  no_show: { label: "لم يحضر", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" },
 };
 
 const phoneBookingSchema = z.object({
-  patientName: z.string().min(2, "Name must be at least 2 characters"),
-  patientPhone: z.string().min(8, "Please enter a valid phone number"),
-  serviceId: z.string().min(1, "Please select a service"),
-  date: z.string().min(1, "Please select a date"),
-  time: z.string().min(1, "Please select a time"),
+  patientName: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
+  patientPhone: z.string().min(8, "يرجى إدخال رقم هاتف صحيح"),
+  serviceId: z.string().min(1, "يرجى اختيار خدمة"),
+  date: z.string().min(1, "يرجى اختيار تاريخ"),
+  time: z.string().min(1, "يرجى اختيار وقت"),
   notes: z.string().optional(),
 });
 
@@ -47,16 +48,15 @@ export default function DoctorDashboard() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Handle Google OAuth callback redirects
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("calendarConnected") === "1") {
-      toast({ title: "Google Calendar connected!", description: "Your appointments will now sync automatically." });
+      toast({ title: "تم ربط تقويم Google!", description: "ستتزامن مواعيدك تلقائياً." });
       window.history.replaceState({}, "", "/doctor/dashboard");
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/calendar/status"] });
     }
     if (params.get("calendarError") === "1") {
-      toast({ title: "Calendar connection failed", description: "Please try again.", variant: "destructive" });
+      toast({ title: "فشل ربط التقويم", description: "يرجى المحاولة مرة أخرى.", variant: "destructive" });
       window.history.replaceState({}, "", "/doctor/dashboard");
     }
   }, []);
@@ -69,15 +69,13 @@ export default function DoctorDashboard() {
     mutationFn: () => apiRequest("DELETE", "/api/doctor/calendar/disconnect", {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/calendar/status"] });
-      toast({ title: "Google Calendar disconnected" });
+      toast({ title: "تم قطع اتصال تقويم Google" });
     },
   });
 
   const bookingLink = user?.doctorId
     ? `${window.location.origin}/book?doctor=${user.doctorId}`
     : "";
-
-  const today = format(new Date(), "yyyy-MM-dd");
 
   const { data: todayAppts = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/doctor/appointments/today"],
@@ -109,7 +107,7 @@ export default function DoctorDashboard() {
 
   const next14Days = Array.from({ length: 14 }, (_, i) => {
     const d = addDays(new Date(), i + 1);
-    return { value: format(d, "yyyy-MM-dd"), label: format(d, "EEE, MMM d") };
+    return { value: format(d, "yyyy-MM-dd"), label: format(d, "EEE، d MMM", { locale: ar }) };
   });
 
   const updateMutation = useMutation({
@@ -117,7 +115,7 @@ export default function DoctorDashboard() {
       apiRequest("PATCH", `/api/doctor/appointments/${id}/status`, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/appointments"] });
-      toast({ title: "Appointment updated" });
+      toast({ title: "تم تحديث الموعد" });
     },
   });
 
@@ -126,12 +124,12 @@ export default function DoctorDashboard() {
       apiRequest("POST", "/api/doctor/appointments", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctor/appointments"] });
-      toast({ title: "Booking created", description: "Phone booking has been added and confirmed." });
+      toast({ title: "تم إنشاء الحجز", description: "تم إضافة الحجز الهاتفي وتأكيده." });
       form.reset();
       setBookingDialogOpen(false);
     },
     onError: () => {
-      toast({ title: "Failed to create booking", variant: "destructive" });
+      toast({ title: "فشل إنشاء الحجز", variant: "destructive" });
     },
   });
 
@@ -139,7 +137,7 @@ export default function DoctorDashboard() {
     mutationFn: () => apiRequest("POST", "/api/doctor/arrived", {}),
     onSuccess: () => {
       setArrivedDialogOpen(false);
-      toast({ title: "Patients notified", description: "All confirmed patients have been notified that you've arrived." });
+      toast({ title: "تم إشعار المرضى", description: "تم إشعار جميع المرضى المؤكدين بوصول الطبيب." });
     },
   });
 
@@ -151,10 +149,10 @@ export default function DoctorDashboard() {
     try {
       await navigator.clipboard.writeText(bookingLink);
       setCopied(true);
-      toast({ title: "Link copied!", description: "Share this link with your patients." });
+      toast({ title: "تم نسخ الرابط!", description: "شاركه مع مرضاك." });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast({ title: "Copy failed", description: "Please copy the link manually.", variant: "destructive" });
+      toast({ title: "فشل النسخ", description: "يرجى نسخ الرابط يدوياً.", variant: "destructive" });
     }
   };
 
@@ -164,12 +162,12 @@ export default function DoctorDashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {/* الرأس */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Schedule</h1>
+          <h1 className="text-2xl font-bold text-foreground">جدول مواعيدي</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {format(new Date(), "EEEE, MMMM d, yyyy")}
+            {format(new Date(), "EEEE، d MMMM yyyy", { locale: ar })}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -180,7 +178,7 @@ export default function DoctorDashboard() {
             data-testid="button-phone-booking"
           >
             <PhoneIncoming className="w-4 h-4" />
-            Book by Phone
+            حجز هاتفي
           </Button>
           <Button
             onClick={() => setArrivedDialogOpen(true)}
@@ -188,12 +186,12 @@ export default function DoctorDashboard() {
             data-testid="button-doctor-arrived"
           >
             <Bell className="w-4 h-4" />
-            Doctor Arrived
+            الطبيب وصل
           </Button>
         </div>
       </div>
 
-      {/* Shareable Booking Link */}
+      {/* رابط الحجز */}
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -202,8 +200,8 @@ export default function DoctorDashboard() {
                 <Share2 className="w-4 h-4 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">Your Booking Link</p>
-                <p className="text-xs text-muted-foreground">Share with patients on social media — they book directly with you</p>
+                <p className="text-sm font-semibold text-foreground">رابط حجزك</p>
+                <p className="text-xs text-muted-foreground">شارك مع مرضاك على وسائل التواصل — يحجزون مباشرةً معك</p>
               </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -211,7 +209,7 @@ export default function DoctorDashboard() {
                 className="flex-1 sm:w-72 min-w-0 px-3 py-2 rounded-md bg-background border border-border text-xs text-muted-foreground truncate font-mono"
                 data-testid="text-booking-link"
               >
-                {bookingLink || "Loading…"}
+                {bookingLink || "جارٍ التحميل..."}
               </div>
               <Button
                 size="sm"
@@ -222,14 +220,14 @@ export default function DoctorDashboard() {
                 data-testid="button-copy-booking-link"
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? "Copied!" : "Copy"}
+                {copied ? "تم النسخ!" : "نسخ"}
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Google Calendar Sync */}
+      {/* مزامنة تقويم Google */}
       <Card className={calendarStatus?.connected ? "border-blue-200 dark:border-blue-800 bg-blue-50/40 dark:bg-blue-900/10" : "border-border"}>
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -238,11 +236,11 @@ export default function DoctorDashboard() {
                 <CalendarDays className={`w-4 h-4 ${calendarStatus?.connected ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">Google Calendar</p>
+                <p className="text-sm font-semibold text-foreground">تقويم Google</p>
                 {calendarStatus?.connected ? (
-                  <p className="text-xs text-blue-600 dark:text-blue-400">Connected — appointments sync automatically</p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">متصل — تتزامن المواعيد تلقائياً</p>
                 ) : (
-                  <p className="text-xs text-muted-foreground">Connect to sync appointments to your Google Calendar</p>
+                  <p className="text-xs text-muted-foreground">اربط لمزامنة المواعيد مع تقويم Google</p>
                 )}
               </div>
             </div>
@@ -256,7 +254,7 @@ export default function DoctorDashboard() {
                   className="gap-1.5 text-red-600 hover:text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
                   data-testid="button-disconnect-calendar"
                 >
-                  <Unlink className="w-3.5 h-3.5" />Disconnect
+                  <Unlink className="w-3.5 h-3.5" />قطع الاتصال
                 </Button>
               ) : calendarStatus?.googleConfigured ? (
                 <Button
@@ -265,50 +263,50 @@ export default function DoctorDashboard() {
                   className="gap-1.5"
                   data-testid="button-connect-calendar"
                 >
-                  <Link2 className="w-3.5 h-3.5" />Connect Google Calendar
+                  <Link2 className="w-3.5 h-3.5" />ربط تقويم Google
                 </Button>
               ) : (
-                <span className="text-xs text-muted-foreground italic">Google OAuth not configured — see admin settings</span>
+                <span className="text-xs text-muted-foreground italic">OAuth غير مُعد — راجع إعدادات المدير</span>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Today's Stats */}
+      {/* إحصاءات اليوم */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-2xl font-bold text-foreground">{todayAppts.length}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Total Today</p>
+            <p className="text-xs text-muted-foreground mt-0.5">إجمالي اليوم</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{confirmedToday}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Confirmed</p>
+            <p className="text-xs text-muted-foreground mt-0.5">مؤكد</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4 text-center">
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">{completedToday}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Completed</p>
+            <p className="text-xs text-muted-foreground mt-0.5">مكتمل</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Appointments Tabs */}
+      {/* تبويبات المواعيد */}
       <Tabs defaultValue="today">
         <TabsList data-testid="tabs-schedule">
-          <TabsTrigger value="today" data-testid="tab-today">Today</TabsTrigger>
-          <TabsTrigger value="week" data-testid="tab-week">This Week</TabsTrigger>
+          <TabsTrigger value="today" data-testid="tab-today">اليوم</TabsTrigger>
+          <TabsTrigger value="week" data-testid="tab-week">هذا الأسبوع</TabsTrigger>
         </TabsList>
 
         <TabsContent value="today" className="mt-4">
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
-              <CardTitle className="text-base font-semibold">Today's Appointments</CardTitle>
-              <Badge variant="secondary">{todayAppts.length} total</Badge>
+              <CardTitle className="text-base font-semibold">مواعيد اليوم</CardTitle>
+              <Badge variant="secondary">{todayAppts.length} إجمالي</Badge>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -316,9 +314,9 @@ export default function DoctorDashboard() {
               ) : todayAppts.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
                   <Calendar className="w-10 h-10 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground">No appointments today</p>
+                  <p className="text-sm text-muted-foreground">لا توجد مواعيد اليوم</p>
                   <Button variant="outline" size="sm" className="mt-3 gap-2" onClick={() => setBookingDialogOpen(true)}>
-                    <Plus className="w-4 h-4" />Add Phone Booking
+                    <Plus className="w-4 h-4" />إضافة حجز هاتفي
                   </Button>
                 </div>
               ) : (
@@ -355,8 +353,9 @@ export default function DoctorDashboard() {
                             onClick={() => updateMutation.mutate({ id: appt.id, status: "completed" })}
                             data-testid={`button-complete-${appt.id}`}
                             disabled={updateMutation.isPending}
+                            className="gap-1"
                           >
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" />Done
+                            <CheckCircle className="w-3.5 h-3.5" />منجز
                           </Button>
                         )}
                         {appt.status === "confirmed" && (
@@ -367,7 +366,7 @@ export default function DoctorDashboard() {
                             data-testid={`button-noshow-${appt.id}`}
                             disabled={updateMutation.isPending}
                           >
-                            No Show
+                            غياب
                           </Button>
                         )}
                       </div>
@@ -382,13 +381,13 @@ export default function DoctorDashboard() {
         <TabsContent value="week" className="mt-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">This Week's Appointments</CardTitle>
+              <CardTitle className="text-base font-semibold">مواعيد هذا الأسبوع</CardTitle>
             </CardHeader>
             <CardContent>
               {weekAppts.length === 0 ? (
                 <div className="flex flex-col items-center py-12 text-center">
                   <Calendar className="w-10 h-10 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground">No appointments this week</p>
+                  <p className="text-sm text-muted-foreground">لا توجد مواعيد هذا الأسبوع</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -399,8 +398,8 @@ export default function DoctorDashboard() {
                       className="flex items-center gap-4 p-3 rounded-md border border-border bg-card"
                     >
                       <div className="text-center w-20 shrink-0">
-                        <p className="text-xs text-muted-foreground">{format(new Date(appt.date + "T00:00:00"), "EEE")}</p>
-                        <p className="text-sm font-bold text-foreground">{format(new Date(appt.date + "T00:00:00"), "MMM d")}</p>
+                        <p className="text-xs text-muted-foreground">{format(new Date(appt.date + "T00:00:00"), "EEE", { locale: ar })}</p>
+                        <p className="text-sm font-bold text-foreground">{format(new Date(appt.date + "T00:00:00"), "d MMM", { locale: ar })}</p>
                         <p className="text-xs text-muted-foreground">{appt.time}</p>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -419,26 +418,25 @@ export default function DoctorDashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* ── Phone Booking Dialog ── */}
+      {/* ── نافذة الحجز الهاتفي ── */}
       <Dialog open={bookingDialogOpen} onOpenChange={(open) => { setBookingDialogOpen(open); if (!open) form.reset(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <PhoneIncoming className="w-5 h-5 text-primary" />
-              Book by Phone
+              الحجز الهاتفي
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmitPhoneBooking)} className="space-y-4 pt-1">
 
-            {/* Patient Name */}
             <div className="space-y-1.5">
-              <Label htmlFor="phone-patient-name">Patient Name</Label>
+              <Label htmlFor="phone-patient-name">اسم المريض</Label>
               <div className="relative">
-                <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <User className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="phone-patient-name"
-                  className="pl-9"
-                  placeholder="Full name"
+                  className="pr-9"
+                  placeholder="الاسم الكامل"
                   data-testid="input-phone-patient-name"
                   {...form.register("patientName")}
                 />
@@ -448,14 +446,13 @@ export default function DoctorDashboard() {
               )}
             </div>
 
-            {/* Patient Phone */}
             <div className="space-y-1.5">
-              <Label htmlFor="phone-patient-phone">Phone / WhatsApp</Label>
+              <Label htmlFor="phone-patient-phone">الهاتف / واتساب</Label>
               <div className="relative">
-                <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Phone className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="phone-patient-phone"
-                  className="pl-9"
+                  className="pr-9"
                   placeholder="+218 91 234 5678"
                   data-testid="input-phone-patient-phone"
                   {...form.register("patientPhone")}
@@ -466,20 +463,19 @@ export default function DoctorDashboard() {
               )}
             </div>
 
-            {/* Service */}
             <div className="space-y-1.5">
-              <Label>Service</Label>
+              <Label>الخدمة</Label>
               <Select
                 value={form.watch("serviceId")}
                 onValueChange={(val) => { form.setValue("serviceId", val); form.setValue("time", ""); }}
               >
                 <SelectTrigger data-testid="select-phone-service">
-                  <SelectValue placeholder="Select a service" />
+                  <SelectValue placeholder="اختر خدمة" />
                 </SelectTrigger>
                 <SelectContent>
                   {myServices.map(svc => (
                     <SelectItem key={svc.id} value={svc.id} data-testid={`option-service-${svc.id}`}>
-                      {svc.name} ({svc.duration} min)
+                      {svc.name} ({svc.duration} دقيقة)
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -489,15 +485,14 @@ export default function DoctorDashboard() {
               )}
             </div>
 
-            {/* Date */}
             <div className="space-y-1.5">
-              <Label>Date</Label>
+              <Label>التاريخ</Label>
               <Select
                 value={form.watch("date")}
                 onValueChange={(val) => { form.setValue("date", val); form.setValue("time", ""); }}
               >
                 <SelectTrigger data-testid="select-phone-date">
-                  <SelectValue placeholder="Select a date" />
+                  <SelectValue placeholder="اختر تاريخاً" />
                 </SelectTrigger>
                 <SelectContent>
                   {next14Days.map(d => (
@@ -512,28 +507,24 @@ export default function DoctorDashboard() {
               )}
             </div>
 
-            {/* Time */}
             <div className="space-y-1.5">
-              <Label>Time Slot</Label>
-              {!watchedDate || !watchedServiceId ? (
-                <p className="text-xs text-muted-foreground py-1">Select a service and date first</p>
-              ) : loadingSlots ? (
-                <div className="h-9 bg-muted animate-pulse rounded-md" />
-              ) : availableSlots.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-1">No available slots for this date</p>
+              <Label>فترة الموعد</Label>
+              {loadingSlots ? (
+                <div className="h-10 bg-muted animate-pulse rounded-md" />
+              ) : availableSlots.length === 0 && watchedDate && watchedServiceId ? (
+                <p className="text-xs text-muted-foreground py-2">لا توجد مواعيد متاحة لهذا التاريخ</p>
               ) : (
                 <Select
                   value={form.watch("time")}
                   onValueChange={(val) => form.setValue("time", val)}
+                  disabled={!watchedDate || !watchedServiceId}
                 >
                   <SelectTrigger data-testid="select-phone-time">
-                    <SelectValue placeholder="Select a time" />
+                    <SelectValue placeholder="اختر وقتاً" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableSlots.map(slot => (
-                      <SelectItem key={slot} value={slot} data-testid={`option-time-${slot}`}>
-                        {slot}
-                      </SelectItem>
+                      <SelectItem key={slot} value={slot} data-testid={`option-slot-${slot}`}>{slot}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -543,68 +534,47 @@ export default function DoctorDashboard() {
               )}
             </div>
 
-            {/* Notes */}
             <div className="space-y-1.5">
-              <Label htmlFor="phone-notes">Notes (optional)</Label>
-              <Input
-                id="phone-notes"
-                placeholder="Reason for visit, special notes…"
-                data-testid="input-phone-notes"
-                {...form.register("notes")}
-              />
+              <Label>ملاحظات (اختياري)</Label>
+              <Input placeholder="أي ملاحظات..." data-testid="input-phone-notes" {...form.register("notes")} />
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="flex-1"
-                onClick={() => { setBookingDialogOpen(false); form.reset(); }}
-                data-testid="button-cancel-phone-booking"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 gap-2"
-                disabled={phoneBookingMutation.isPending}
-                data-testid="button-submit-phone-booking"
-              >
-                <Plus className="w-4 h-4" />
-                {phoneBookingMutation.isPending ? "Booking…" : "Confirm Booking"}
+            <div className="flex justify-start gap-3 pt-2">
+              <Button type="button" variant="ghost" onClick={() => setBookingDialogOpen(false)}>إلغاء</Button>
+              <Button type="submit" disabled={phoneBookingMutation.isPending} data-testid="button-confirm-phone-booking">
+                {phoneBookingMutation.isPending ? "جارٍ الحجز..." : "تأكيد الحجز"}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Doctor Arrived Dialog */}
+      {/* ── نافذة إشعار وصول الطبيب ── */}
       <Dialog open={arrivedDialogOpen} onOpenChange={setArrivedDialogOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Notify Patients</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-green-600" />
+              إشعار وصول الطبيب
+            </DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
-              <Bell className="w-7 h-7 text-green-600 dark:text-green-400" />
-            </div>
-            <p className="text-sm text-center text-foreground font-medium mb-2">Doctor Arrived — Send Notification</p>
-            <p className="text-xs text-center text-muted-foreground mb-6">
-              This will send a WhatsApp notification to all {confirmedToday} confirmed patients today:
-              <br /><br />
-              <em className="text-foreground">"The doctor has arrived. Please arrive 10 minutes early."</em>
+          <div className="space-y-4 pt-1">
+            <p className="text-sm text-muted-foreground">
+              سيتم إرسال رسالة واتساب لجميع المرضى المؤكدين اليوم لإعلامهم بوصولك.
             </p>
-            <div className="flex gap-3">
-              <Button variant="ghost" className="flex-1" onClick={() => setArrivedDialogOpen(false)} data-testid="button-cancel-arrived">
-                Cancel
-              </Button>
+            <p className="text-sm font-medium text-foreground">
+              {confirmedToday} مريض مؤكد سيتلقى الإشعار.
+            </p>
+            <div className="flex justify-start gap-3">
+              <Button variant="ghost" onClick={() => setArrivedDialogOpen(false)}>إلغاء</Button>
               <Button
-                className="flex-1 bg-green-600 dark:bg-green-700 text-white border-0"
+                className="bg-green-600 dark:bg-green-700 text-white border-0 gap-2"
                 onClick={() => arrivedMutation.mutate()}
-                disabled={arrivedMutation.isPending || confirmedToday === 0}
-                data-testid="button-send-arrived"
+                disabled={arrivedMutation.isPending}
+                data-testid="button-confirm-arrived"
               >
-                {arrivedMutation.isPending ? "Sending..." : "Send Notification"}
+                <Bell className="w-4 h-4" />
+                {arrivedMutation.isPending ? "جارٍ الإرسال..." : "إرسال إشعار الوصول"}
               </Button>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,23 +17,17 @@ import { useToast } from "@/hooks/use-toast";
 import type { Doctor } from "@shared/schema";
 
 const doctorFormSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  specialty: z.string().min(2, "Specialty is required"),
+  name: z.string().min(2, "الاسم مطلوب"),
+  specialty: z.string().min(2, "التخصص مطلوب"),
   photo: z.string().optional(),
-  workingHours: z.string().min(1, "Working hours required"),
+  workingHours: z.string().min(1, "ساعات العمل مطلوبة"),
   breakTime: z.string().optional(),
 });
 type DoctorForm = z.infer<typeof doctorFormSchema>;
 
 const CLINIC_ID = "clinic-1";
 
-function DoctorFormDialog({
-  doctor,
-  onClose,
-}: {
-  doctor?: Doctor;
-  onClose: () => void;
-}) {
+function DoctorFormDialog({ doctor, onClose }: { doctor?: Doctor; onClose: () => void }) {
   const { toast } = useToast();
   const form = useForm<DoctorForm>({
     resolver: zodResolver(doctorFormSchema),
@@ -51,7 +45,7 @@ function DoctorFormDialog({
       apiRequest("POST", "/api/admin/doctors", { ...data, clinicId: CLINIC_ID }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/doctors"] });
-      toast({ title: "Doctor added" });
+      toast({ title: "تمت إضافة الطبيب" });
       onClose();
     },
   });
@@ -61,7 +55,7 @@ function DoctorFormDialog({
       apiRequest("PATCH", `/api/admin/doctors/${doctor!.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/doctors"] });
-      toast({ title: "Doctor updated" });
+      toast({ title: "تم تحديث بيانات الطبيب" });
       onClose();
     },
   });
@@ -77,32 +71,32 @@ function DoctorFormDialog({
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5 col-span-2">
-          <Label>Full Name</Label>
-          <Input placeholder="Dr. Ahmed Ali" {...form.register("name")} data-testid="input-doctor-name" />
+          <Label>الاسم الكامل</Label>
+          <Input placeholder="د. أحمد علي" {...form.register("name")} data-testid="input-doctor-name" />
           {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
         </div>
         <div className="space-y-1.5 col-span-2">
-          <Label>Specialty</Label>
-          <Input placeholder="General Medicine" {...form.register("specialty")} data-testid="input-doctor-specialty" />
+          <Label>التخصص</Label>
+          <Input placeholder="طب عام" {...form.register("specialty")} data-testid="input-doctor-specialty" />
           {form.formState.errors.specialty && <p className="text-xs text-destructive">{form.formState.errors.specialty.message}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label>Working Hours</Label>
+          <Label>ساعات العمل</Label>
           <Input placeholder="09:00-17:00" {...form.register("workingHours")} data-testid="input-doctor-hours" />
         </div>
         <div className="space-y-1.5">
-          <Label>Break Time</Label>
+          <Label>وقت الراحة</Label>
           <Input placeholder="13:00-14:00" {...form.register("breakTime")} data-testid="input-doctor-break" />
         </div>
         <div className="space-y-1.5 col-span-2">
-          <Label>Photo URL (optional)</Label>
+          <Label>رابط الصورة (اختياري)</Label>
           <Input placeholder="https://..." {...form.register("photo")} data-testid="input-doctor-photo" />
         </div>
       </div>
-      <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+      <div className="flex justify-start gap-3 pt-2">
+        <Button type="button" variant="ghost" onClick={onClose}>إلغاء</Button>
         <Button type="submit" disabled={isPending} data-testid="button-save-doctor">
-          {isPending ? "Saving..." : doctor ? "Update Doctor" : "Add Doctor"}
+          {isPending ? "جارٍ الحفظ..." : doctor ? "تحديث الطبيب" : "إضافة الطبيب"}
         </Button>
       </div>
     </form>
@@ -122,7 +116,7 @@ export default function AdminDoctors() {
     mutationFn: (id: string) => apiRequest("DELETE", `/api/admin/doctors/${id}`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/doctors"] });
-      toast({ title: "Doctor removed" });
+      toast({ title: "تم حذف الطبيب" });
     },
   });
 
@@ -134,18 +128,18 @@ export default function AdminDoctors() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Doctors</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage clinic doctors and their schedules</p>
+          <h1 className="text-2xl font-bold text-foreground">الأطباء</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">إدارة أطباء العيادة وجداولهم</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openAdd} data-testid="button-add-doctor">
-              <Plus className="w-4 h-4 mr-2" />Add Doctor
+            <Button onClick={openAdd} data-testid="button-add-doctor" className="gap-2">
+              <Plus className="w-4 h-4" />إضافة طبيب
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingDoctor ? "Edit Doctor" : "Add New Doctor"}</DialogTitle>
+              <DialogTitle>{editingDoctor ? "تعديل الطبيب" : "إضافة طبيب جديد"}</DialogTitle>
             </DialogHeader>
             <DoctorFormDialog doctor={editingDoctor} onClose={closeDialog} />
           </DialogContent>
@@ -160,10 +154,10 @@ export default function AdminDoctors() {
         <Card>
           <CardContent className="flex flex-col items-center py-16 text-center">
             <Stethoscope className="w-12 h-12 text-muted-foreground/50 mb-4" />
-            <p className="text-sm font-medium text-muted-foreground">No doctors yet</p>
-            <p className="text-xs text-muted-foreground mt-1 mb-4">Add your first doctor to get started</p>
-            <Button size="sm" onClick={openAdd} data-testid="button-add-first-doctor">
-              <Plus className="w-4 h-4 mr-2" />Add Doctor
+            <p className="text-sm font-medium text-muted-foreground">لا يوجد أطباء بعد</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">أضف أول طبيب للبدء</p>
+            <Button size="sm" onClick={openAdd} data-testid="button-add-first-doctor" className="gap-2">
+              <Plus className="w-4 h-4" />إضافة طبيب
             </Button>
           </CardContent>
         </Card>
@@ -191,14 +185,14 @@ export default function AdminDoctors() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => openEdit(doc)} data-testid={`button-edit-doctor-${doc.id}`}>
-                            <Edit2 className="w-4 h-4 mr-2" />Edit
+                            <Edit2 className="w-4 h-4 ml-2" />تعديل
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => deleteMutation.mutate(doc.id)}
                             className="text-destructive"
                             data-testid={`button-delete-doctor-${doc.id}`}
                           >
-                            <Trash2 className="w-4 h-4 mr-2" />Delete
+                            <Trash2 className="w-4 h-4 ml-2" />حذف
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -209,7 +203,7 @@ export default function AdminDoctors() {
                       <span>{doc.workingHours}</span>
                     </div>
                     {doc.breakTime && (
-                      <p className="text-xs text-muted-foreground mt-0.5">Break: {doc.breakTime}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">استراحة: {doc.breakTime}</p>
                     )}
                   </div>
                 </div>

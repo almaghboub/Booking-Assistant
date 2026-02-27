@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Service, Doctor } from "@shared/schema";
 
 const serviceFormSchema = z.object({
-  name: z.string().min(2, "Name is required"),
+  name: z.string().min(2, "الاسم مطلوب"),
   duration: z.coerce.number().min(5).max(480),
   price: z.string().optional(),
   bufferTime: z.coerce.number().min(0).default(0),
@@ -50,7 +50,7 @@ function ServiceFormDialog({ service, doctors, onClose }: { service?: Service; d
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
-      toast({ title: "Service added" });
+      toast({ title: "تمت إضافة الخدمة" });
       onClose();
     },
   });
@@ -64,7 +64,7 @@ function ServiceFormDialog({ service, doctors, onClose }: { service?: Service; d
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
-      toast({ title: "Service updated" });
+      toast({ title: "تم تحديث الخدمة" });
       onClose();
     },
   });
@@ -78,43 +78,43 @@ function ServiceFormDialog({ service, doctors, onClose }: { service?: Service; d
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
       <div className="space-y-1.5">
-        <Label>Service Name</Label>
-        <Input placeholder="General Checkup" {...form.register("name")} data-testid="input-service-name" />
+        <Label>اسم الخدمة</Label>
+        <Input placeholder="كشف عام" {...form.register("name")} data-testid="input-service-name" />
         {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Duration (minutes)</Label>
+          <Label>المدة (دقيقة)</Label>
           <Input type="number" min="5" placeholder="30" {...form.register("duration")} data-testid="input-service-duration" />
         </div>
         <div className="space-y-1.5">
-          <Label>Buffer Time (min)</Label>
+          <Label>وقت الانتظار (دقيقة)</Label>
           <Input type="number" min="0" placeholder="0" {...form.register("bufferTime")} data-testid="input-service-buffer" />
         </div>
         <div className="space-y-1.5">
-          <Label>Price (optional)</Label>
+          <Label>السعر (اختياري)</Label>
           <Input placeholder="50.00" {...form.register("price")} data-testid="input-service-price" />
         </div>
         <div className="space-y-1.5">
-          <Label>Assigned Doctor</Label>
+          <Label>الطبيب المسؤول</Label>
           <Select
             defaultValue={service?.doctorId ?? "all"}
             onValueChange={v => form.setValue("doctorId", v)}
           >
             <SelectTrigger data-testid="select-service-doctor">
-              <SelectValue placeholder="All doctors" />
+              <SelectValue placeholder="جميع الأطباء" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Doctors</SelectItem>
+              <SelectItem value="all">جميع الأطباء</SelectItem>
               {doctors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
-      <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+      <div className="flex justify-start gap-3 pt-2">
+        <Button type="button" variant="ghost" onClick={onClose}>إلغاء</Button>
         <Button type="submit" disabled={isPending} data-testid="button-save-service">
-          {isPending ? "Saving..." : service ? "Update Service" : "Add Service"}
+          {isPending ? "جارٍ الحفظ..." : service ? "تحديث الخدمة" : "إضافة الخدمة"}
         </Button>
       </div>
     </form>
@@ -133,7 +133,7 @@ export default function AdminServices() {
     mutationFn: (id: string) => apiRequest("DELETE", `/api/admin/services/${id}`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
-      toast({ title: "Service removed" });
+      toast({ title: "تم حذف الخدمة" });
     },
   });
 
@@ -144,18 +144,18 @@ export default function AdminServices() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Services</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage the services offered at your clinic</p>
+          <h1 className="text-2xl font-bold text-foreground">الخدمات</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">إدارة الخدمات المقدمة في العيادة</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openAdd} data-testid="button-add-service">
-              <Plus className="w-4 h-4 mr-2" />Add Service
+            <Button onClick={openAdd} data-testid="button-add-service" className="gap-2">
+              <Plus className="w-4 h-4" />إضافة خدمة
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingService ? "Edit Service" : "Add New Service"}</DialogTitle>
+              <DialogTitle>{editingService ? "تعديل الخدمة" : "إضافة خدمة جديدة"}</DialogTitle>
             </DialogHeader>
             <ServiceFormDialog service={editingService} doctors={doctors} onClose={() => setDialogOpen(false)} />
           </DialogContent>
@@ -170,9 +170,9 @@ export default function AdminServices() {
         <Card>
           <CardContent className="flex flex-col items-center py-16 text-center">
             <ClipboardList className="w-12 h-12 text-muted-foreground/50 mb-4" />
-            <p className="text-sm font-medium text-muted-foreground">No services yet</p>
-            <p className="text-xs text-muted-foreground mt-1 mb-4">Add your first service</p>
-            <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-2" />Add Service</Button>
+            <p className="text-sm font-medium text-muted-foreground">لا توجد خدمات بعد</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">أضف أول خدمة للبدء</p>
+            <Button size="sm" onClick={openAdd} className="gap-2"><Plus className="w-4 h-4" />إضافة خدمة</Button>
           </CardContent>
         </Card>
       ) : (
@@ -191,9 +191,11 @@ export default function AdminServices() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEdit(svc)}><Edit2 className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openEdit(svc)}>
+                        <Edit2 className="w-4 h-4 ml-2" />تعديل
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => deleteMutation.mutate(svc.id)} className="text-destructive">
-                        <Trash2 className="w-4 h-4 mr-2" />Delete
+                        <Trash2 className="w-4 h-4 ml-2" />حذف
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -201,10 +203,10 @@ export default function AdminServices() {
                 <p className="font-semibold text-foreground mt-3">{svc.name}</p>
                 <div className="flex items-center gap-3 mt-2 flex-wrap">
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" />{svc.duration} min
+                    <Clock className="w-3 h-3" />{svc.duration} دقيقة
                   </span>
                   {svc.bufferTime && svc.bufferTime > 0 ? (
-                    <span className="text-xs text-muted-foreground">+{svc.bufferTime} min buffer</span>
+                    <span className="text-xs text-muted-foreground">+{svc.bufferTime} دق انتظار</span>
                   ) : null}
                   {svc.price && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -214,7 +216,7 @@ export default function AdminServices() {
                 </div>
                 {svc.doctorId && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Assigned: {doctors.find(d => d.id === svc.doctorId)?.name ?? "Unknown"}
+                    مخصص لـ: {doctors.find(d => d.id === svc.doctorId)?.name ?? "غير معروف"}
                   </p>
                 )}
               </CardContent>
