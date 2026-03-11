@@ -43,3 +43,6 @@ waitForPort = 5000
 
 [userenv.shared]
 FHIR_API_KEY = "7a20c60f943d00edab1e7f6bf727bf4306f7ff1e62518ee70029d1e7db62431d"
+
+[agent]
+expertMode = true
