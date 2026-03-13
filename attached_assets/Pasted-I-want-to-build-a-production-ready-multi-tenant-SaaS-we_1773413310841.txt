@@ -1,0 +1,361 @@
+I want to build a production-ready multi-tenant SaaS web application called:
+
+SMART CLINIC AUTOMATION SYSTEM
+
+This system will be deployed on Libyan Spider hosting.
+The backend, frontend, and PostgreSQL database will all be hosted on Libyan Spider servers.
+
+This is NOT a demo project.
+It must be secure, scalable, and production-ready.
+
+SYSTEM PURPOSE
+
+Build a clinic automation platform that provides:
+
+Online booking system
+
+WhatsApp confirmation (YES / NO reply logic)
+
+Online payment (deposit or full)
+
+Doctor dashboard
+
+WhatsApp reminder automation
+
+SMS fallback system
+
+Patient CRM
+
+Revenue tracking
+
+Multi-tenant architecture (multiple clinics)
+
+TECH STACK REQUIREMENTS
+
+Backend:
+Laravel (latest stable version)
+
+Database:
+PostgreSQL
+
+Frontend:
+Blade + Tailwind (for MVP simplicity)
+OR React + Laravel API if needed
+
+Queue system:
+Redis (for background jobs: reminders, WhatsApp, SMS)
+
+Authentication:
+Laravel Sanctum or built-in auth with role-based middleware
+
+MULTI-TENANT ARCHITECTURE
+
+Each clinic must be isolated.
+
+All tables must include:
+clinic_id
+
+Super Admin can view all clinics.
+Clinic Admin can only access their clinic data.
+Doctors can only see their own appointments.
+
+CORE DATABASE STRUCTURE
+
+Create migrations for:
+
+Users
+
+id
+
+clinic_id
+
+name
+
+email
+
+password
+
+role (super_admin, clinic_admin, doctor)
+
+Clinics
+
+id
+
+name
+
+logo
+
+address
+
+phone
+
+whatsapp_number
+
+subscription_plan
+
+subscription_status
+
+Doctors
+
+id
+
+clinic_id
+
+name
+
+specialty
+
+working_hours
+
+break_times
+
+Services
+
+id
+
+clinic_id
+
+name
+
+duration
+
+price
+
+buffer_time
+
+Appointments
+
+id
+
+clinic_id
+
+doctor_id
+
+service_id
+
+patient_name
+
+patient_phone
+
+date
+
+time
+
+status (pending, confirmed, cancelled, paid, completed)
+
+confirmation_time
+
+Payments
+
+id
+
+appointment_id
+
+amount
+
+payment_type (deposit/full)
+
+status
+
+transaction_id
+
+gateway
+
+paid_at
+
+Messages_Log
+
+id
+
+appointment_id
+
+channel (whatsapp, sms)
+
+message_type (confirmation, reminder, arrival, payment)
+
+status
+
+sent_at
+
+delivered_at
+
+BOOKING FLOW
+
+Patient selects:
+
+Clinic
+
+Doctor
+
+Service
+
+Date
+
+Available time slot
+
+System:
+
+Locks slot
+
+Creates appointment
+
+Status = pending_confirmation
+
+If payment required:
+
+Redirect to payment gateway
+
+On success → status = paid + pending_confirmation
+
+Send WhatsApp template message:
+"Reply YES to confirm or NO to cancel."
+
+Create webhook endpoint:
+/api/webhook/whatsapp
+
+If reply = YES → status = confirmed
+If reply = NO → status = cancelled and release slot
+
+WHATSAPP INTEGRATION
+
+Use Meta WhatsApp Cloud API.
+
+Requirements:
+
+Secure token storage (.env)
+
+Webhook signature verification
+
+Store message logs
+
+Queue outgoing messages
+
+SMS FALLBACK SYSTEM
+
+Logic:
+If WhatsApp not delivered OR no reply within X hours:
+Trigger SMS automatically.
+
+Requirements:
+
+SMS gateway integration (API based)
+
+Store delivery reports
+
+SMS usage tracking per clinic
+
+DOCTOR DASHBOARD
+
+Must show:
+
+Daily schedule
+
+Weekly schedule
+
+Status badges
+
+“Doctor Arrived” button
+
+When clicked:
+Send bulk WhatsApp message to all confirmed patients for today.
+Use background queue.
+
+REMINDER AUTOMATION
+
+Scheduled jobs:
+
+24 hours before appointment
+
+2 hours before appointment
+
+Use Laravel scheduler + queue.
+
+SECURITY REQUIREMENTS
+
+HTTPS enforced
+
+CSRF protection
+
+Rate limiting
+
+Password hashing (bcrypt)
+
+Webhook validation
+
+No raw card storage
+
+Role-based middleware
+
+Daily backup script
+
+PERFORMANCE REQUIREMENTS
+
+Handle 10,000+ bookings per month
+
+Support 100+ clinics
+
+Under 2 second response time
+
+Use indexing on:
+
+clinic_id
+
+doctor_id
+
+date
+
+status
+
+DEPLOYMENT REQUIREMENTS (Libyan Spider)
+
+The project must be structured for:
+
+Shared hosting OR VPS on Libyan Spider
+
+.env configuration
+
+Proper storage linking
+
+Public folder routing
+
+PostgreSQL connection setup
+
+Provide:
+
+Deployment steps
+
+Required server PHP extensions
+
+Queue setup instructions
+
+Cron job setup for scheduler
+
+FINAL REQUIREMENT
+
+Write clean, modular, scalable Laravel code.
+Use service classes for:
+
+WhatsAppService
+
+SmsService
+
+PaymentService
+
+Use repository pattern if possible.
+Prepare system for future microservices split.
+
+Start by generating:
+
+Project structure
+
+Migrations
+
+Models
+
+Controllers
+
+Routes
+
+Middleware
+
+Basic booking flow
