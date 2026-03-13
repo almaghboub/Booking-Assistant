@@ -24,6 +24,15 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// Allow embedding in Replit preview panes
+app.use((_req, res, next) => {
+  res.setHeader("X-Frame-Options", "ALLOWALL");
+  if (process.env.NODE_ENV !== "production") {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+  }
+  next();
+});
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
