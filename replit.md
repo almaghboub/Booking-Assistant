@@ -1,7 +1,14 @@
 # Rakaz Smart Clinic Automation System
 
 ## Overview
-A full-stack web-based clinic appointment booking and management platform built for clinics, doctors, and patients. Supports online booking, admin management, doctor dashboards, WhatsApp notifications, Google Calendar sync, and HL7 FHIR R4 EMR integration.
+A full-stack multi-tenant clinic appointment booking and management platform built for clinics, doctors, and patients. Supports online booking, admin management, doctor dashboards, WhatsApp notifications with YES/NO webhook, SMS fallback, automated reminders, online payments, Google Calendar sync, HL7 FHIR R4 EMR integration, and Super Admin dashboard.
+
+## Logins
+- Clinic Admin (Rakaz): `admin` / `admin123`
+- Clinic Admin (Al-Nour, clinic-2): `admin2` / `admin123`
+- Doctor (Rakaz): `doctor1`, `doctor2`, `doctor3` / `doctor123`
+- Doctor (Al-Nour): `doctor4`, `doctor5` / `doctor123`
+- Super Admin: `superadmin` / `super123`
 
 ## Tech Stack
 - **Frontend**: React + TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, wouter

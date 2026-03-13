@@ -8,32 +8,36 @@ export async function seedDatabase() {
   const existingClinics = await db.select().from(clinics).where(eq(clinics.id, "clinic-1"));
   if (existingClinics.length > 0) {
     console.log("[seed] Database already seeded, skipping.");
+    // Ensure super admin exists even if skipping
+    await db.execute(sql`INSERT INTO users (id, username, password, role, full_name) VALUES ('user-super-1', 'superadmin', 'super123', 'super_admin', 'Super Administrator') ON CONFLICT (username) DO NOTHING`);
+    // Ensure second clinic and its admin exist
+    await db.execute(sql`INSERT INTO clinics (id, name, address, phone, whatsapp_number, business_hours, subscription_plan, subscription_status) VALUES ('clinic-2', 'Al-Nour Medical Center', '45 Al-Rashid Street, Benghazi, Libya', '+218-92-765-4321', '+218-92-765-4321', '09:00-18:00', 'pro', 'active') ON CONFLICT (id) DO NOTHING`);
+    await db.execute(sql`INSERT INTO users (id, username, password, role, clinic_id, full_name) VALUES ('user-admin-2', 'admin2', 'admin123', 'clinic_admin', 'clinic-2', 'Al-Nour Administrator') ON CONFLICT (username) DO NOTHING`);
     return;
   }
 
   console.log("[seed] Seeding database...");
 
-  // Create clinic
-  await db.execute(sql`INSERT INTO clinics (id, name, address, phone, whatsapp_number, business_hours) VALUES ('clinic-1', 'Rakaz Medical Clinic', '123 Healthcare Street, Tripoli, Libya', '+218-91-123-4567', '+218-91-123-4567', '08:00-20:00') ON CONFLICT (id) DO NOTHING`);
+  // ── Super Admin ──
+  await db.execute(sql`INSERT INTO users (id, username, password, role, full_name) VALUES ('user-super-1', 'superadmin', 'super123', 'super_admin', 'Super Administrator') ON CONFLICT (username) DO NOTHING`);
 
-  // Create admin user
+  // ── Clinic 1: Rakaz Medical ──
+  await db.execute(sql`INSERT INTO clinics (id, name, address, phone, whatsapp_number, business_hours, subscription_plan, subscription_status) VALUES ('clinic-1', 'Rakaz Medical Clinic', '123 Healthcare Street, Tripoli, Libya', '+218-91-123-4567', '+218-91-123-4567', '08:00-20:00', 'enterprise', 'active') ON CONFLICT (id) DO NOTHING`);
+
   await db.execute(sql`INSERT INTO users (id, username, password, role, clinic_id, full_name) VALUES ('user-admin-1', 'admin', 'admin123', 'clinic_admin', 'clinic-1', 'Clinic Administrator') ON CONFLICT (username) DO NOTHING`);
 
-  // Create doctors
   await db.execute(sql`INSERT INTO doctors (id, clinic_id, name, specialty, working_hours, break_time, is_active) VALUES
     ('doctor-1', 'clinic-1', 'Dr. Ahmed Al-Mansouri', 'General Medicine', '08:00-16:00', '13:00-14:00', true),
     ('doctor-2', 'clinic-1', 'Dr. Sara Hassan', 'Dermatology', '09:00-17:00', '13:00-14:00', true),
     ('doctor-3', 'clinic-1', 'Dr. Khalid Omar', 'Pediatrics', '10:00-18:00', '14:00-15:00', true)
     ON CONFLICT (id) DO NOTHING`);
 
-  // Create doctor users
   await db.execute(sql`INSERT INTO users (id, username, password, role, clinic_id, doctor_id, full_name) VALUES
     ('user-doctor-1', 'doctor1', 'doctor123', 'doctor', 'clinic-1', 'doctor-1', 'Dr. Ahmed Al-Mansouri'),
     ('user-doctor-2', 'doctor2', 'doctor123', 'doctor', 'clinic-1', 'doctor-2', 'Dr. Sara Hassan'),
     ('user-doctor-3', 'doctor3', 'doctor123', 'doctor', 'clinic-1', 'doctor-3', 'Dr. Khalid Omar')
     ON CONFLICT (username) DO NOTHING`);
 
-  // Create services
   await db.execute(sql`INSERT INTO services (id, clinic_id, doctor_id, name, duration, price, buffer_time, is_active) VALUES
     ('service-1', 'clinic-1', null, 'General Consultation', 30, '50.00', 5, true),
     ('service-2', 'clinic-1', 'doctor-1', 'Full Physical Exam', 60, '150.00', 10, true),
@@ -43,7 +47,6 @@ export async function seedDatabase() {
     ('service-6', 'clinic-1', 'doctor-3', 'Vaccination', 15, '30.00', 0, true)
     ON CONFLICT (id) DO NOTHING`);
 
-  // Create patients
   await db.execute(sql`INSERT INTO patients (id, clinic_id, full_name, phone, notes, no_show_count, is_flagged) VALUES
     ('patient-1', 'clinic-1', 'Mohammed Al-Farsi', '+218-91-234-5678', 'Regular patient, mild hypertension', 0, false),
     ('patient-2', 'clinic-1', 'Fatima Benali', '+218-92-345-6789', 'Allergic to penicillin', 1, false),
@@ -53,7 +56,6 @@ export async function seedDatabase() {
     ('patient-6', 'clinic-1', 'Mariam Al-Nouri', '+218-93-789-0123', 'First visit', 0, false)
     ON CONFLICT (id) DO NOTHING`);
 
-  // Create appointments
   const today = new Date().toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
@@ -67,9 +69,40 @@ export async function seedDatabase() {
     ('appt-5', 'clinic-1', 'doctor-3', 'patient-5', 'service-5', 'Ibrahim Hassan', '+218-92-678-9012', ${today}, '10:00', 'pending_confirmation'),
     ('appt-6', 'clinic-1', 'doctor-1', 'patient-1', 'service-1', 'Mohammed Al-Farsi', '+218-91-234-5678', ${yesterday}, '09:00', 'completed'),
     ('appt-7', 'clinic-1', 'doctor-2', 'patient-6', 'service-3', 'Mariam Al-Nouri', '+218-93-789-0123', ${yesterday}, '09:35', 'no_show'),
-    ('appt-8', 'clinic-1', 'doctor-1', 'patient-4', 'service-1', 'Aisha Mohammed', '+218-91-567-8901', ${tomorrow}, '09:35', 'pending_confirmation'),
+    ('appt-8', 'clinic-1', 'doctor-1', 'patient-4', 'service-1', 'Aisha Mohammed', '+218-91-567-8901', ${tomorrow}, '09:35', 'confirmed'),
     ('appt-9', 'clinic-1', 'doctor-3', 'patient-2', 'service-6', 'Fatima Benali', '+218-92-345-6789', ${tomorrow}, '10:00', 'pending_confirmation'),
     ('appt-10', 'clinic-1', 'doctor-1', 'patient-5', 'service-2', 'Ibrahim Hassan', '+218-92-678-9012', ${dayAfter}, '09:05', 'pending_confirmation')
+    ON CONFLICT (id) DO NOTHING`);
+
+  // ── Clinic 2: Al-Nour Medical Center ──
+  await db.execute(sql`INSERT INTO clinics (id, name, address, phone, whatsapp_number, business_hours, subscription_plan, subscription_status) VALUES ('clinic-2', 'Al-Nour Medical Center', '45 Al-Rashid Street, Benghazi, Libya', '+218-92-765-4321', '+218-92-765-4321', '09:00-18:00', 'pro', 'active') ON CONFLICT (id) DO NOTHING`);
+
+  await db.execute(sql`INSERT INTO users (id, username, password, role, clinic_id, full_name) VALUES ('user-admin-2', 'admin2', 'admin123', 'clinic_admin', 'clinic-2', 'Al-Nour Administrator') ON CONFLICT (username) DO NOTHING`);
+
+  await db.execute(sql`INSERT INTO doctors (id, clinic_id, name, specialty, working_hours, break_time, is_active) VALUES
+    ('doctor-4', 'clinic-2', 'Dr. Nour Al-Saadi', 'Cardiology', '09:00-17:00', '13:00-14:00', true),
+    ('doctor-5', 'clinic-2', 'Dr. Layla Mansour', 'Neurology', '10:00-18:00', '13:30-14:30', true)
+    ON CONFLICT (id) DO NOTHING`);
+
+  await db.execute(sql`INSERT INTO users (id, username, password, role, clinic_id, doctor_id, full_name) VALUES
+    ('user-doctor-4', 'doctor4', 'doctor123', 'doctor', 'clinic-2', 'doctor-4', 'Dr. Nour Al-Saadi'),
+    ('user-doctor-5', 'doctor5', 'doctor123', 'doctor', 'clinic-2', 'doctor-5', 'Dr. Layla Mansour')
+    ON CONFLICT (username) DO NOTHING`);
+
+  await db.execute(sql`INSERT INTO services (id, clinic_id, doctor_id, name, duration, price, buffer_time, is_active) VALUES
+    ('service-7', 'clinic-2', null, 'General Consultation', 30, '60.00', 5, true),
+    ('service-8', 'clinic-2', 'doctor-4', 'Cardiac Evaluation', 60, '250.00', 15, true),
+    ('service-9', 'clinic-2', 'doctor-5', 'Neurology Consultation', 45, '200.00', 10, true)
+    ON CONFLICT (id) DO NOTHING`);
+
+  await db.execute(sql`INSERT INTO patients (id, clinic_id, full_name, phone, notes, no_show_count, is_flagged) VALUES
+    ('patient-7', 'clinic-2', 'Ali Hassan', '+218-92-111-2222', 'Heart condition', 0, false),
+    ('patient-8', 'clinic-2', 'Hana Al-Werfalli', '+218-91-333-4444', '', 0, false)
+    ON CONFLICT (id) DO NOTHING`);
+
+  await db.execute(sql`INSERT INTO appointments (id, clinic_id, doctor_id, patient_id, service_id, patient_name, patient_phone, date, time, status) VALUES
+    ('appt-11', 'clinic-2', 'doctor-4', 'patient-7', 'service-8', 'Ali Hassan', '+218-92-111-2222', ${today}, '09:00', 'confirmed'),
+    ('appt-12', 'clinic-2', 'doctor-5', 'patient-8', 'service-9', 'Hana Al-Werfalli', '+218-91-333-4444', ${today}, '10:00', 'pending_confirmation')
     ON CONFLICT (id) DO NOTHING`);
 
   console.log("[seed] Database seeded successfully.");

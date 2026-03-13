@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, ChevronLeft, ChevronRight, Clock, CheckCircle2, Calendar, User, Phone, ArrowRight, ArrowLeft } from "lucide-react";
+import { Stethoscope, ChevronLeft, ChevronRight, Clock, CheckCircle2, Calendar, User, Phone, ArrowRight, ArrowLeft, CreditCard, Lock } from "lucide-react";
 import arLogoPath from "@assets/F1C71113-6C7B-4F07-9F7B-D8BEB9011ADA_1772231296978.png";
 import enLogoPath from "@assets/45A1E150-36A4-404D-9C46-272B6E73972F_1772233514083.png";
 import { apiRequest } from "@/lib/queryClient";
@@ -92,6 +92,9 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [pendingAppointmentId, setPendingAppointmentId] = useState<string | null>(null);
+  const [pendingPaymentAmount, setPendingPaymentAmount] = useState<string | null>(null);
+  const [payingNow, setPayingNow] = useState(false);
 
   const form = useForm<PatientForm>({
     resolver: zodResolver(patientSchema),
@@ -127,10 +130,33 @@ export default function BookingPage() {
 
   const bookMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/public/appointments", data),
-    onSuccess: async () => {
-      setIsSuccess(true);
+    onSuccess: async (result: any) => {
+      if (result?.requiresPayment && result?.id) {
+        setPendingAppointmentId(result.id);
+        setPendingPaymentAmount(result.paymentAmount);
+        setStep(5);
+      } else {
+        setIsSuccess(true);
+      }
     },
   });
+
+  const handleSimulatedPayment = async () => {
+    if (!pendingAppointmentId) return;
+    setPayingNow(true);
+    try {
+      await apiRequest("POST", `/api/public/appointments/${pendingAppointmentId}/payment-confirm`, {
+        transactionId: `SIM-${Date.now()}`,
+        gateway: "simulated",
+      });
+      setIsSuccess(true);
+    } catch {
+      // still show success for demo
+      setIsSuccess(true);
+    } finally {
+      setPayingNow(false);
+    }
+  };
 
   const next14Days = Array.from({ length: 14 }, (_, i) => {
     const d = addDays(new Date(), i + 1);
@@ -549,6 +575,64 @@ export default function BookingPage() {
                 {bookMutation.isPending ? t("book_confirming") : t("book_confirm")}
               </Button>
             </div>
+          </div>
+        )}
+
+        {/* Step 5: Payment */}
+        {step === 5 && (
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-1">Payment Required</h2>
+            <p className="text-sm text-muted-foreground mb-6">Complete your deposit to confirm the booking.</p>
+
+            <Card className="mb-6">
+              <CardContent className="pt-5 pb-5 space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Service</span>
+                  <span className="font-medium text-foreground">{selectedService?.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Doctor</span>
+                  <span className="font-medium text-foreground">{selectedDoctor?.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Date & Time</span>
+                  <span className="font-medium text-foreground">{selectedDate} · {selectedTime}</span>
+                </div>
+                <div className="border-t border-border pt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-semibold text-foreground">Amount Due</span>
+                    <span className="text-xl font-bold text-primary">{pendingPaymentAmount} LYD</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Deposit payment to secure your appointment.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Simulated payment form */}
+            <div className="space-y-3 mb-6">
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input className="pl-9" placeholder="Card number: 4242 4242 4242 4242" disabled data-testid="input-card-number" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input placeholder="MM / YY" disabled data-testid="input-card-expiry" />
+                <Input placeholder="CVC" disabled data-testid="input-card-cvc" />
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Lock className="w-3 h-3" />
+                <span>Payment demo — no real charges made. Click below to confirm.</span>
+              </div>
+            </div>
+
+            <Button
+              className="w-full gap-2"
+              onClick={handleSimulatedPayment}
+              disabled={payingNow}
+              data-testid="button-pay-now"
+            >
+              <CreditCard className="w-4 h-4" />
+              {payingNow ? "Processing..." : `Pay ${pendingPaymentAmount} LYD & Confirm Booking`}
+            </Button>
           </div>
         )}
       </div>

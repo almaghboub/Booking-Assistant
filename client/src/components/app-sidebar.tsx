@@ -24,6 +24,8 @@ import {
   ClipboardList,
   UserCheck,
   Settings,
+  Building2,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
@@ -46,17 +48,31 @@ export function AppSidebar() {
   ];
 
   const doctorItems = [
-    { title: t("doctor_schedule"),      url: "/doctor",               icon: CalendarDays },
-    { title: t("doctor_appointments"),  url: "/doctor/appointments",  icon: Calendar },
-    { title: t("doctor_patients"),      url: "/doctor/patients",      icon: UserCheck },
+    { title: t("doctor_schedule"),     url: "/doctor",              icon: CalendarDays },
+    { title: t("doctor_appointments"), url: "/doctor/appointments", icon: Calendar },
+    { title: t("doctor_patients"),     url: "/doctor/patients",     icon: UserCheck },
   ];
 
-  const items = user?.role === "doctor" ? doctorItems : user?.role === "clinic_admin" ? adminItems : [];
+  const superAdminItems = [
+    { title: "Dashboard",         url: "/super",               icon: Shield },
+    { title: "Clinics",           url: "/super/clinics",       icon: Building2 },
+    { title: "All Appointments",  url: "/super/appointments",  icon: Calendar },
+  ];
+
+  const items =
+    user?.role === "super_admin"  ? superAdminItems :
+    user?.role === "doctor"       ? doctorItems :
+    user?.role === "clinic_admin" ? adminItems : [];
 
   const handleLogout = async () => {
     await logout();
     navigate("/");
   };
+
+  const roleLabel =
+    user?.role === "super_admin"  ? "Super Admin" :
+    user?.role === "clinic_admin" ? t("sidebar_admin") :
+    user?.role === "doctor"       ? t("sidebar_doctor") : "";
 
   return (
     <Sidebar>
@@ -74,7 +90,8 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
-                const isActive = location === item.url || (item.url !== "/admin" && item.url !== "/doctor" && location.startsWith(item.url));
+                const isActive = location === item.url ||
+                  (item.url !== "/admin" && item.url !== "/doctor" && item.url !== "/super" && location.startsWith(item.url));
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild data-active={isActive}>
@@ -100,9 +117,7 @@ export function AppSidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.fullName || user?.username}</p>
-            <p className="text-xs text-muted-foreground">
-              {user?.role === "clinic_admin" ? t("sidebar_admin") : user?.role === "doctor" ? t("sidebar_doctor") : ""}
-            </p>
+            <p className="text-xs text-muted-foreground">{roleLabel}</p>
           </div>
           <Button
             size="icon"

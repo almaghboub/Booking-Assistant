@@ -10,12 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import {
   MessageSquare, ShieldCheck, Copy, Eye, EyeOff, Check,
   CheckCircle, XCircle, Send, ExternalLink, RefreshCw, Zap,
+  Bell, CreditCard, Smartphone, Webhook,
 } from "lucide-react";
 
 interface SettingsData {
   whatsapp: { configured: boolean; phoneNumberId: string | null };
   fhir: { configured: boolean; apiKey: string | null; baseUrl: string };
   google: { configured: boolean };
+  sms: { configured: boolean };
+  webhookUrl?: string;
 }
 
 const FHIR_ENDPOINTS = [
@@ -289,6 +292,154 @@ export default function AdminSettings() {
 {`curl "${settings?.fhir.baseUrl ?? "<FHIR_BASE_URL>"}/Appointment?date=$(date +%Y-%m-%d)" \\
   -H "Authorization: Bearer ${settings?.fhir.apiKey?.slice(0, 8) ?? "<FHIR_API_KEY>"}..."`}
             </pre>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── WhatsApp Webhook URL ── */}
+      {settings?.webhookUrl && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                <Webhook className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <CardTitle className="text-base">WhatsApp Webhook</CardTitle>
+                <CardDescription className="text-xs">رابط الـ Webhook لاستقبال ردود العملاء (نعم/لا)</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Webhook URL</Label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 px-3 py-2 rounded-md bg-muted border border-border text-xs font-mono text-foreground truncate" data-testid="text-webhook-url">
+                  {settings.webhookUrl}
+                </div>
+                <Button size="icon" variant="outline" onClick={async () => {
+                  await navigator.clipboard.writeText(settings.webhookUrl!);
+                  toast({ title: "تم نسخ رابط الـ Webhook" });
+                }}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">أضف هذا الرابط في Meta Developer Console → WhatsApp → Configuration → Webhook URL. رمز التحقق: <span className="font-mono">rakaz_verify</span></p>
+            </div>
+            <div className="rounded-md bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 p-3 text-xs text-blue-800 dark:text-blue-300 space-y-1">
+              <p className="font-medium">كيف يعمل:</p>
+              <ul className="list-disc list-inside space-y-0.5 opacity-80">
+                <li>عند رد المريض بـ <strong>نعم</strong> → تأكيد الموعد تلقائياً</li>
+                <li>عند رد المريض بـ <strong>لا</strong> → إلغاء الموعد تلقائياً</li>
+                <li>الردود الأخرى → تُسجَّل في سجل الرسائل</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── SMS Fallback ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <CardTitle className="text-base">SMS Fallback</CardTitle>
+                <CardDescription className="text-xs">Twilio / Vonage — بديل WhatsApp</CardDescription>
+              </div>
+            </div>
+            {settings?.sms.configured ? (
+              <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-0 gap-1">
+                <CheckCircle className="w-3 h-3" />مُهيأ
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="gap-1">
+                <XCircle className="w-3 h-3" />غير مُهيأ
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {settings?.sms.configured ? (
+            <div className="rounded-md bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 p-3 text-sm text-emerald-800 dark:text-emerald-300">
+              <p className="font-medium">SMS نشط</p>
+              <p className="text-xs mt-1 opacity-80">سيتم استخدام SMS تلقائياً عند فشل WhatsApp.</p>
+            </div>
+          ) : (
+            <div className="rounded-md bg-muted/50 border border-border p-3 text-sm space-y-2">
+              <p className="font-medium text-foreground">كيفية الإعداد (Twilio):</p>
+              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>أنشئ حساباً على <span className="font-mono">twilio.com</span></li>
+                <li>احصل على Account SID و Auth Token ورقم SMS</li>
+                <li>أضف <span className="font-mono">SMS_API_KEY</span> و<span className="font-mono">SMS_FROM</span> كمتغيرات بيئة</li>
+              </ol>
+              <p className="text-xs text-muted-foreground">أو استخدم Vonage: <span className="font-mono">SMS_GATEWAY=vonage</span> مع <span className="font-mono">SMS_API_KEY</span> و<span className="font-mono">SMS_API_SECRET</span></p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Automated Reminders ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <Bell className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <CardTitle className="text-base">التذكيرات التلقائية</CardTitle>
+              <CardDescription className="text-xs">إرسال تذكيرات قبل المواعيد عبر WhatsApp / SMS</CardDescription>
+            </div>
+            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 gap-1 ms-auto">
+              <CheckCircle className="w-3 h-3" />نشط
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="rounded-md bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 p-3 text-sm text-amber-800 dark:text-amber-300">
+              <p className="font-medium">الجدول الزمني للتذكيرات</p>
+              <ul className="text-xs mt-1 opacity-80 space-y-0.5 list-disc list-inside">
+                <li>قبل <strong>24 ساعة</strong>: تذكير بالموعد عبر WhatsApp</li>
+                <li>قبل <strong>2 ساعة</strong>: تذكير أخير قبيل الموعد</li>
+                <li>الأولوية: WhatsApp أولاً، ثم SMS كبديل</li>
+                <li>يتم إرسالها فقط للمواعيد المؤكدة</li>
+              </ul>
+            </div>
+            <p className="text-xs text-muted-foreground">يعمل المجدول تلقائياً في الخلفية. لا حاجة لأي إعداد إضافي.</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Payment Settings ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <CardTitle className="text-base">الدفع الإلكتروني</CardTitle>
+                <CardDescription className="text-xs">Stripe — دفع مبدئي لتأمين المواعيد</CardDescription>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md bg-muted/50 border border-border p-3 text-sm space-y-2">
+            <p className="font-medium text-foreground">كيفية تفعيل الدفع:</p>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>أنشئ حساباً على <span className="font-mono">stripe.com</span></li>
+              <li>احصل على المفتاح السري من لوحة تحكم Stripe</li>
+              <li>أضف <span className="font-mono">STRIPE_SECRET_KEY</span> كمتغير بيئة</li>
+              <li>فعّل الدفع لكل عيادة من لوحة Super Admin</li>
+              <li>فعّل <span className="font-mono">requiresPayment</span> لكل خدمة من إعدادات الخدمات</li>
+            </ol>
+            <p className="text-xs text-muted-foreground mt-2">الحالة الحالية: وضع تجريبي — المدفوعات محاكاة فقط.</p>
           </div>
         </CardContent>
       </Card>

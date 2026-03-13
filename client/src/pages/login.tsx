@@ -126,6 +126,7 @@ export default function LoginPage() {
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">{t("login_demo_admin")} <span className="font-mono text-foreground">admin / admin123</span></p>
                 <p className="text-xs text-muted-foreground">{t("login_demo_doctor")} <span className="font-mono text-foreground">doctor1 / doctor123</span></p>
+                <p className="text-xs text-muted-foreground">Super Admin: <span className="font-mono text-foreground">superadmin / super123</span></p>
               </div>
             </div>
           </CardContent>
