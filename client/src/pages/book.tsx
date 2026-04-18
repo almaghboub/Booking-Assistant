@@ -95,6 +95,7 @@ export default function BookingPage() {
   const [pendingAppointmentId, setPendingAppointmentId] = useState<string | null>(null);
   const [pendingPaymentAmount, setPendingPaymentAmount] = useState<string | null>(null);
   const [payingNow, setPayingNow] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const form = useForm<PatientForm>({
     resolver: zodResolver(patientSchema),
@@ -141,19 +142,99 @@ export default function BookingPage() {
     },
   });
 
-  const handleSimulatedPayment = async () => {
-    if (!pendingAppointmentId) return;
+  // Dynamically load an external script tag (idempotent — won't load twice)
+  const loadScript = (src: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const el = document.createElement("script");
+      el.src = src;
+      el.onload = () => resolve();
+      el.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.head.appendChild(el);
+    });
+
+  const initiateMoamalatPayment = async () => {
+    if (!pendingAppointmentId || !pendingPaymentAmount) return;
     setPayingNow(true);
+    setPaymentError(null);
+
     try {
-      await apiRequest("POST", `/api/public/appointments/${pendingAppointmentId}/payment-confirm`, {
-        transactionId: `SIM-${Date.now()}`,
-        gateway: "simulated",
-      });
-      setIsSuccess(true);
-    } catch {
-      // still show success for demo
-      setIsSuccess(true);
-    } finally {
+      // 1. Ask backend to generate secure config (SecureHash computed server-side)
+      const configRes = await fetch("/api/moamalat/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: pendingPaymentAmount,
+          merchantReference: `APPT-${pendingAppointmentId}`,
+        }),
+      }).then((r) => r.json());
+
+      if (!configRes.success) throw new Error(configRes.error || "Failed to create payment");
+
+      // 2. Get the correct LightBox script URL from backend (dev vs prod)
+      const { url: scriptUrl } = await fetch("/api/moamalat/lightbox-url").then((r) => r.json());
+
+      // 3. Load Moamalat LightBox script dynamically
+      await loadScript(scriptUrl);
+
+      const Lightbox = (window as any).Lightbox;
+      if (!Lightbox?.Checkout) throw new Error("Moamalat LightBox failed to initialise");
+
+      // 4. Configure LightBox with backend-generated values
+      Lightbox.Checkout.configure = {
+        ...configRes.config,
+
+        // Called when payment succeeds
+        completeCallback: async (data: any) => {
+          try {
+            // 5. Verify callback hash on backend before trusting the result
+            const verifyRes = await fetch("/api/moamalat/verify-complete-callback", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            }).then((r) => r.json());
+
+            if (!verifyRes.success) {
+              setPaymentError("Payment received but verification failed. Please contact support.");
+              setPayingNow(false);
+              return;
+            }
+
+            // 6. Confirm the appointment payment in our system
+            await apiRequest("POST", `/api/public/appointments/${pendingAppointmentId}/payment-confirm`, {
+              transactionId: data.SystemReference || data.NetworkReference || `MOAMALAT-${Date.now()}`,
+              gateway: "moamalat",
+            });
+
+            setIsSuccess(true);
+          } catch (err: any) {
+            setPaymentError(err.message || "Payment completed but failed to update booking. Contact support.");
+          } finally {
+            setPayingNow(false);
+          }
+        },
+
+        // Called when payment fails
+        errorCallback: (data: any) => {
+          setPaymentError(`Payment failed: ${data?.message || "Please try again."}`);
+          setPayingNow(false);
+        },
+
+        // Called when user closes the LightBox without paying
+        cancelCallback: () => {
+          setPaymentError(null);
+          setPayingNow(false);
+        },
+      };
+
+      // 5. Open the LightBox
+      Lightbox.Checkout.showLightbox();
+    } catch (err: any) {
+      console.error("[Moamalat]", err);
+      setPaymentError(err.message || "Failed to load payment gateway. Please try again.");
       setPayingNow(false);
     }
   };
@@ -578,12 +659,13 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Step 5: Payment */}
+        {/* Step 5: Moamalat Payment */}
         {step === 5 && (
           <div>
             <h2 className="text-xl font-bold text-foreground mb-1">Payment Required</h2>
             <p className="text-sm text-muted-foreground mb-6">Complete your deposit to confirm the booking.</p>
 
+            {/* Order summary */}
             <Card className="mb-6">
               <CardContent className="pt-5 pb-5 space-y-4">
                 <div className="flex items-center justify-between text-sm">
@@ -595,7 +677,7 @@ export default function BookingPage() {
                   <span className="font-medium text-foreground">{selectedDoctor?.name}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Date & Time</span>
+                  <span className="text-muted-foreground">Date &amp; Time</span>
                   <span className="font-medium text-foreground">{selectedDate} · {selectedTime}</span>
                 </div>
                 <div className="border-t border-border pt-4">
@@ -608,30 +690,39 @@ export default function BookingPage() {
               </CardContent>
             </Card>
 
-            {/* Simulated payment form */}
-            <div className="space-y-3 mb-6">
-              <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input className="pl-9" placeholder="Card number: 4242 4242 4242 4242" disabled data-testid="input-card-number" />
+            {/* Error message */}
+            {paymentError && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-4 text-sm text-destructive" data-testid="text-payment-error">
+                {paymentError}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input placeholder="MM / YY" disabled data-testid="input-card-expiry" />
-                <Input placeholder="CVC" disabled data-testid="input-card-cvc" />
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Lock className="w-3 h-3" />
-                <span>Payment demo — no real charges made. Click below to confirm.</span>
-              </div>
+            )}
+
+            {/* Security note */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-5">
+              <Lock className="w-3.5 h-3.5 shrink-0" />
+              <span>Secured by Moamalat — your card details are never shared with this site.</span>
             </div>
 
+            {/* Pay button — opens Moamalat LightBox */}
             <Button
-              className="w-full gap-2"
-              onClick={handleSimulatedPayment}
+              className="w-full gap-2 text-base py-5"
+              onClick={initiateMoamalatPayment}
               disabled={payingNow}
               data-testid="button-pay-now"
             >
-              <CreditCard className="w-4 h-4" />
-              {payingNow ? "Processing..." : `Pay ${pendingPaymentAmount} LYD & Confirm Booking`}
+              <CreditCard className="w-5 h-5" />
+              {payingNow ? "Loading payment gateway…" : `Pay ${pendingPaymentAmount} LYD`}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-3 text-muted-foreground"
+              onClick={() => { setStep(4); setPaymentError(null); }}
+              disabled={payingNow}
+              data-testid="button-cancel-payment"
+            >
+              Cancel & go back
             </Button>
           </div>
         )}

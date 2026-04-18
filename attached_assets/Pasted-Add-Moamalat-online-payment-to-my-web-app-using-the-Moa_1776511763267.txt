@@ -1,0 +1,124 @@
+Add Moamalat online payment to my web app using the Moamalat LightBox integration.
+
+Requirements:
+- Use a backend route to generate the Moamalat payment config securely.
+- Do NOT generate the secure hash in the frontend.
+- Use environment variables for secrets.
+- Use the Moamalat test LightBox script in development:
+  https://tnpg.moamalat.net:6006/js/lightbox.js
+- Keep production-ready structure so I can later switch to:
+  https://npg.moamalat.net:6006/js/lightbox.js
+
+Moamalat integration details:
+- Required fields:
+  MID
+  TID
+  AmountTrxn
+  MerchantReference
+  TrxDateTime
+  SecureHash
+- AmountTrxn must be in the smallest currency unit. 1 LYD = 1000.
+- TrxDateTime format: yyyyMMddHHmm
+- Use callbacks:
+  completeCallback
+  errorCallback
+  cancelCallback
+
+Secure hash rules:
+- Generate SHA-256 HMAC in uppercase hex.
+- Use the merchant secret key as a hex-decoded key.
+- For the LightBox request hash, use these fields only:
+  Amount
+  DateTimeLocalTrxn
+  MerchantId
+  MerchantReference
+  TerminalId
+- Sort field names ascending.
+- Build the string like:
+  Amount=...&DateTimeLocalTrxn=...&MerchantId=...&MerchantReference=...&TerminalId=...
+- Then compute HMAC-SHA256 and return uppercase hex.
+
+What I want you to build:
+1. A backend endpoint:
+   POST /api/moamalat/create-payment
+   Input:
+   {
+     "amount": 1.000,
+     "merchantReference": "ORDER-1001"
+   }
+   Output:
+   {
+     "success": true,
+     "config": {
+       "MID": "...",
+       "TID": "...",
+       "AmountTrxn": "...",
+       "MerchantReference": "...",
+       "TrxDateTime": "...",
+       "SecureHash": "..."
+     }
+   }
+
+2. A frontend payment button that:
+- calls /api/moamalat/create-payment
+- loads Moamalat LightBox
+- sets:
+  Lightbox.Checkout.configure = {
+    MID,
+    TID,
+    AmountTrxn,
+    MerchantReference,
+    TrxDateTime,
+    SecureHash,
+    completeCallback,
+    errorCallback,
+    cancelCallback
+  }
+- then calls:
+  Lightbox.Checkout.showLightbox();
+
+3. A backend verification endpoint:
+   POST /api/moamalat/verify-complete-callback
+- It must verify the SecureHash returned in the successful callback.
+- It must remove SecureHash from the payload, sort the remaining fields alphabetically, rebuild the query string, compute HMAC-SHA256 using the same hex-decoded merchant key, uppercase it, and compare it to the received SecureHash.
+
+4. Save successful payment data so I can later connect it to orders:
+- merchantReference
+- systemReference
+- networkReference
+- txnDate
+- amount
+- currency
+- paidThrough
+- payerAccount
+- payerName
+- status
+
+Environment variables to use:
+- MOAMALAT_MID
+- MOAMALAT_TID
+- MOAMALAT_SECRET_HEX
+
+Tech requirements:
+- Use Node.js + Express
+- Serve a simple frontend page from /public
+- Add clear comments in code
+- Add basic validation and error handling
+- Keep code clean and easy to modify
+
+Important:
+- Never expose MOAMALAT_SECRET_HEX in frontend code
+- Never trust frontend success only; always verify callback hash on the backend
+- Build this in test mode first
+
+Also create these files:
+- server.js
+- public/index.html
+
+If needed, use this frontend structure:
+- amount input
+- merchant reference input
+- Pay Now button
+- area to print callback / verification result
+
+Use the Moamalat LightBox docs exactly as described above.

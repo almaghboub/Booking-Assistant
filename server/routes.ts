@@ -21,6 +21,7 @@ import {
 } from "./whatsapp";
 import { sendSmsConfirmationRequest } from "./sms";
 import { registerFhirRoutes } from "./fhir";
+import { registerMoamalatRoutes } from "./moamalat";
 import {
   isGoogleConfigured, getAuthUrl, exchangeCodeForTokens,
   storeDoctorTokens, disconnectDoctorCalendar, getDoctorCalendarStatus,
@@ -127,6 +128,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   }));
 
   registerFhirRoutes(app);
+  registerMoamalatRoutes(app);
 
   // ── File Upload ──────────────────────────────────────────
   app.use("/uploads", express.static(uploadDir));
