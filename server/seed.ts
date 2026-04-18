@@ -22,7 +22,7 @@ export async function seedDatabase() {
   await db.execute(sql`INSERT INTO users (id, username, password, role, full_name) VALUES ('user-super-1', 'superadmin', 'super123', 'super_admin', 'Super Administrator') ON CONFLICT (username) DO NOTHING`);
 
   // ── Clinic 1: Rakaz Medical ──
-  await db.execute(sql`INSERT INTO clinics (id, name, address, phone, whatsapp_number, business_hours, subscription_plan, subscription_status) VALUES ('clinic-1', 'Rakaz Medical Clinic', '123 Healthcare Street, Tripoli, Libya', '+218-91-123-4567', '+218-91-123-4567', '08:00-20:00', 'enterprise', 'active') ON CONFLICT (id) DO NOTHING`);
+  await db.execute(sql`INSERT INTO clinics (id, name, address, phone, whatsapp_number, business_hours, subscription_plan, subscription_status, payment_enabled, deposit_percentage) VALUES ('clinic-1', 'Rakaz Medical Clinic', '123 Healthcare Street, Tripoli, Libya', '+218-91-123-4567', '+218-91-123-4567', '08:00-20:00', 'enterprise', 'active', true, 30) ON CONFLICT (id) DO NOTHING`);
 
   await db.execute(sql`INSERT INTO users (id, username, password, role, clinic_id, full_name) VALUES ('user-admin-1', 'admin', 'admin123', 'clinic_admin', 'clinic-1', 'Clinic Administrator') ON CONFLICT (username) DO NOTHING`);
 
@@ -38,13 +38,13 @@ export async function seedDatabase() {
     ('user-doctor-3', 'doctor3', 'doctor123', 'doctor', 'clinic-1', 'doctor-3', 'Dr. Khalid Omar')
     ON CONFLICT (username) DO NOTHING`);
 
-  await db.execute(sql`INSERT INTO services (id, clinic_id, doctor_id, name, duration, price, buffer_time, is_active) VALUES
-    ('service-1', 'clinic-1', null, 'General Consultation', 30, '50.00', 5, true),
-    ('service-2', 'clinic-1', 'doctor-1', 'Full Physical Exam', 60, '150.00', 10, true),
-    ('service-3', 'clinic-1', 'doctor-2', 'Skin Consultation', 30, '80.00', 5, true),
-    ('service-4', 'clinic-1', 'doctor-2', 'Dermatology Procedure', 45, '200.00', 15, true),
-    ('service-5', 'clinic-1', 'doctor-3', 'Pediatric Checkup', 30, '60.00', 5, true),
-    ('service-6', 'clinic-1', 'doctor-3', 'Vaccination', 15, '30.00', 0, true)
+  await db.execute(sql`INSERT INTO services (id, clinic_id, doctor_id, name, duration, price, buffer_time, is_active, requires_payment) VALUES
+    ('service-1', 'clinic-1', null,       'General Consultation',  30, '50.00',  5,  true, false),
+    ('service-2', 'clinic-1', 'doctor-1', 'Full Physical Exam',    60, '150.00', 10, true, true),
+    ('service-3', 'clinic-1', 'doctor-2', 'Skin Consultation',     30, '80.00',  5,  true, false),
+    ('service-4', 'clinic-1', 'doctor-2', 'Dermatology Procedure', 45, '200.00', 15, true, true),
+    ('service-5', 'clinic-1', 'doctor-3', 'Pediatric Checkup',     30, '60.00',  5,  true, false),
+    ('service-6', 'clinic-1', 'doctor-3', 'Vaccination',           15, '30.00',  0,  true, false)
     ON CONFLICT (id) DO NOTHING`);
 
   await db.execute(sql`INSERT INTO patients (id, clinic_id, full_name, phone, notes, no_show_count, is_flagged) VALUES
