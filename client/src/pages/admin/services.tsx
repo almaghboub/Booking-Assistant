@@ -182,7 +182,7 @@ export default function AdminServices() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[1,2,3].map(i => <Skeleton key={i} className="h-32" />)}
         </div>
       ) : services.length === 0 ? (
@@ -195,7 +195,7 @@ export default function AdminServices() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {services.map((svc) => (
             <Card key={svc.id} data-testid={`card-service-${svc.id}`}>
               <CardContent className="pt-4 pb-4">

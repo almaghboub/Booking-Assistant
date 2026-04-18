@@ -147,7 +147,7 @@ export default function AdminDoctors() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[1,2,3].map(i => <Skeleton key={i} className="h-40" />)}
         </div>
       ) : doctors.length === 0 ? (
@@ -162,7 +162,7 @@ export default function AdminDoctors() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {doctors.map((doc) => (
             <Card key={doc.id} data-testid={`card-doctor-${doc.id}`}>
               <CardContent className="pt-4 pb-4">

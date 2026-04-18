@@ -161,9 +161,9 @@ export default function AdminPatients() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-3">
         {/* قائمة المرضى */}
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
               <CardTitle className="text-base font-semibold">جميع المرضى</CardTitle>
