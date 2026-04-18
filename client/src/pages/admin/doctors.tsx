@@ -166,47 +166,45 @@ export default function AdminDoctors() {
           {doctors.map((doc) => (
             <Card key={doc.id} data-testid={`card-doctor-${doc.id}`}>
               <CardContent className="pt-4 pb-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                {/* Actions row */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                     {doc.photo ? (
                       <img src={doc.photo} alt={doc.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-lg font-bold text-muted-foreground">{doc.name.charAt(0)}</span>
+                      <span className="text-lg font-bold text-primary">{doc.name.charAt(0)}</span>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-foreground text-sm truncate">{doc.name}</p>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="ghost" data-testid={`button-doctor-actions-${doc.id}`}>
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(doc)} data-testid={`button-edit-doctor-${doc.id}`}>
-                            <Edit2 className="w-4 h-4 ml-2" />تعديل
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => deleteMutation.mutate(doc.id)}
-                            className="text-destructive"
-                            data-testid={`button-delete-doctor-${doc.id}`}
-                          >
-                            <Trash2 className="w-4 h-4 ml-2" />حذف
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <Badge variant="secondary" className="mt-1 text-xs">{doc.specialty}</Badge>
-                    <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>{doc.workingHours}</span>
-                    </div>
-                    {doc.breakTime && (
-                      <p className="text-xs text-muted-foreground mt-0.5">استراحة: {doc.breakTime}</p>
-                    )}
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" data-testid={`button-doctor-actions-${doc.id}`}>
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(doc)} data-testid={`button-edit-doctor-${doc.id}`}>
+                        <Edit2 className="w-4 h-4 ml-2" />تعديل
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => deleteMutation.mutate(doc.id)}
+                        className="text-destructive"
+                        data-testid={`button-delete-doctor-${doc.id}`}
+                      >
+                        <Trash2 className="w-4 h-4 ml-2" />حذف
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
+                {/* Info — full width so names never truncate */}
+                <p className="font-semibold text-foreground text-sm leading-snug" dir="ltr">{doc.name}</p>
+                <Badge variant="secondary" className="mt-1.5 text-xs">{doc.specialty}</Badge>
+                <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground" dir="ltr">
+                  <Clock className="w-3 h-3 shrink-0" />
+                  <span>{doc.workingHours}</span>
+                </div>
+                {doc.breakTime && (
+                  <p className="text-xs text-muted-foreground mt-0.5">استراحة: {doc.breakTime}</p>
+                )}
               </CardContent>
             </Card>
           ))}
