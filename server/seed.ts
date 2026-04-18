@@ -39,12 +39,12 @@ export async function seedDatabase() {
     ON CONFLICT (username) DO NOTHING`);
 
   await db.execute(sql`INSERT INTO services (id, clinic_id, doctor_id, name, duration, price, buffer_time, is_active, requires_payment) VALUES
-    ('service-1', 'clinic-1', null,       'General Consultation',  30, '50.00',  5,  true, false),
+    ('service-1', 'clinic-1', null,       'General Consultation',  30, '50.00',  5,  true, true),
     ('service-2', 'clinic-1', 'doctor-1', 'Full Physical Exam',    60, '150.00', 10, true, true),
-    ('service-3', 'clinic-1', 'doctor-2', 'Skin Consultation',     30, '80.00',  5,  true, false),
+    ('service-3', 'clinic-1', 'doctor-2', 'Skin Consultation',     30, '80.00',  5,  true, true),
     ('service-4', 'clinic-1', 'doctor-2', 'Dermatology Procedure', 45, '200.00', 15, true, true),
-    ('service-5', 'clinic-1', 'doctor-3', 'Pediatric Checkup',     30, '60.00',  5,  true, false),
-    ('service-6', 'clinic-1', 'doctor-3', 'Vaccination',           15, '30.00',  0,  true, false)
+    ('service-5', 'clinic-1', 'doctor-3', 'Pediatric Checkup',     30, '60.00',  5,  true, true),
+    ('service-6', 'clinic-1', 'doctor-3', 'Vaccination',           15, '30.00',  0,  true, true)
     ON CONFLICT (id) DO NOTHING`);
 
   await db.execute(sql`INSERT INTO patients (id, clinic_id, full_name, phone, notes, no_show_count, is_flagged) VALUES

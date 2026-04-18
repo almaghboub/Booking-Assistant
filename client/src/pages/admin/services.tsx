@@ -8,10 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, ClipboardList, Clock, Edit2, Trash2, MoreHorizontal, DollarSign } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, ClipboardList, Clock, Edit2, Trash2, MoreHorizontal, DollarSign, CreditCard } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import type { Service, Doctor } from "@shared/schema";
@@ -22,6 +24,7 @@ const serviceFormSchema = z.object({
   price: z.string().optional(),
   bufferTime: z.coerce.number().min(0).default(0),
   doctorId: z.string().optional(),
+  requiresPayment: z.boolean().default(false),
 });
 type ServiceForm = z.infer<typeof serviceFormSchema>;
 
@@ -37,8 +40,11 @@ function ServiceFormDialog({ service, doctors, onClose }: { service?: Service; d
       price: service?.price ? String(service.price) : "",
       bufferTime: service?.bufferTime ?? 0,
       doctorId: service?.doctorId ?? "all",
+      requiresPayment: service?.requiresPayment ?? false,
     },
   });
+
+  const requiresPayment = form.watch("requiresPayment");
 
   const createMutation = useMutation({
     mutationFn: (data: ServiceForm) =>
@@ -111,6 +117,19 @@ function ServiceFormDialog({ service, doctors, onClose }: { service?: Service; d
           </Select>
         </div>
       </div>
+
+      <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+        <div className="space-y-0.5">
+          <Label className="text-sm font-medium">يتطلب دفع مسبق</Label>
+          <p className="text-xs text-muted-foreground">سيُطلب من المريض دفع وديعة عند الحجز</p>
+        </div>
+        <Switch
+          checked={requiresPayment}
+          onCheckedChange={v => form.setValue("requiresPayment", v)}
+          data-testid="switch-requires-payment"
+        />
+      </div>
+
       <div className="flex justify-start gap-3 pt-2">
         <Button type="button" variant="ghost" onClick={onClose}>إلغاء</Button>
         <Button type="submit" disabled={isPending} data-testid="button-save-service">
@@ -218,6 +237,11 @@ export default function AdminServices() {
                   <p className="text-xs text-muted-foreground mt-1">
                     مخصص لـ: {doctors.find(d => d.id === svc.doctorId)?.name ?? "غير معروف"}
                   </p>
+                )}
+                {svc.requiresPayment && (
+                  <Badge variant="secondary" className="mt-2 gap-1 text-xs" data-testid={`badge-payment-${svc.id}`}>
+                    <CreditCard className="w-3 h-3" />يتطلب دفع مسبق
+                  </Badge>
                 )}
               </CardContent>
             </Card>
