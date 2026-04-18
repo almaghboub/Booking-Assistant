@@ -501,9 +501,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.patch("/api/admin/appointments/:id/status", requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
-    const appt = await storage.updateAppointmentStatus(id, status);
+    const { status, paymentStatus } = req.body;
+    let appt = await storage.updateAppointmentStatus(id, status);
     if (!appt) return res.status(404).json({ error: "Not found" });
+    // If admin also marks payment status (e.g. manual cash payment received)
+    if (paymentStatus) {
+      appt = (await storage.updateAppointment(id, { paymentStatus })) ?? appt;
+    }
 
     const [docRow] = await db.select().from(doctors).where(eq(doctors.id, appt.doctorId));
     const doctorName = docRow?.name ?? "your doctor";
