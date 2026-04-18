@@ -74,8 +74,10 @@ export function AppSidebar() {
     user?.role === "clinic_admin" ? t("sidebar_admin") :
     user?.role === "doctor"       ? t("sidebar_doctor") : "";
 
+  const sidebarSide = language === "ar" ? "right" : "left";
+
   return (
-    <Sidebar>
+    <Sidebar side={sidebarSide}>
       <SidebarHeader className="p-4 border-b border-sidebar-border">
         <Link href="/" className="block">
           <img src={logoPath} alt={t("logoAlt")} className="h-[100px] w-auto object-contain" />

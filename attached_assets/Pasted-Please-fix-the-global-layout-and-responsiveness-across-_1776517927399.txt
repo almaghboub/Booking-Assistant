@@ -1,0 +1,69 @@
+Please fix the global layout and responsiveness across the entire app, not just the doctors page.
+
+Problem:
+- The same display issue exists on all pages.
+- The app looks cut off / not fully visible.
+- The layout is not scaling correctly across the whole dashboard.
+- There may be a global CSS or layout wrapper issue affecting every page.
+
+Please inspect and fix the full app layout, including shared layout components, global CSS, and page containers.
+
+What to check and fix:
+
+1. Global HTML / viewport
+- Make sure the app has:
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+2. Global layout wrapper
+- Check the main app shell, dashboard layout, sidebar layout, and content wrapper.
+- Make sure the layout uses a proper responsive structure:
+  - main app container: display: flex
+  - sidebar: fixed width like 220px–260px
+  - main content: flex: 1
+  - width should not overflow viewport
+  - use box-sizing: border-box everywhere
+
+3. Remove layout-breaking CSS
+Please inspect for and fix any of these across the whole app:
+- width: 100vw on wrappers
+- fixed px widths on page containers
+- large min-width values
+- overflow: hidden on html, body, app root, layout wrapper, or page containers
+- hardcoded widths that make the app wider than the screen
+- incorrect use of calc(100vw - sidebarWidth)
+- parent containers not shrinking correctly
+- missing max-width / width: 100% rules
+
+4. Global CSS reset
+Please make sure these are handled correctly:
+- html, body, #root should use width: 100%
+- margin/padding reset where needed
+- overflow-x should not cause hidden content
+- add box-sizing: border-box globally
+
+5. Shared responsive behavior
+- All pages should inherit a consistent responsive content layout
+- Cards, tables, forms, and sections should shrink or wrap correctly
+- Grid and flex layouts should not push content outside the viewport
+- Ensure RTL Arabic layout still works correctly
+
+6. Sidebar/content behavior
+- Sidebar should stay stable
+- Main content should fit in remaining space
+- No page should be horizontally cut off because of sidebar + content width
+- On smaller screens, make the sidebar responsive if needed
+
+7. Please inspect these files/components specifically:
+- global CSS file
+- app layout wrapper
+- sidebar component
+- page content container
+- any shared dashboard shell / layout component
+
+Expected result:
+- The whole app should display correctly on all pages
+- No pages should appear cut off
+- No hidden overflow should break layout
+- The UI should be fully responsive and fit the screen properly
+
+Please apply the fix globally, not only to one page.

@@ -78,32 +78,25 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const pageTitle = PAGE_TITLES[location] ?? "موعد";
   const logoPath = language === "en" ? enLogoPath : arLogoPath;
 
-  const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
-  };
-
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between px-3 border-b border-border bg-background shrink-0 h-[100px] gap-2">
-            <div className="flex items-center gap-1 shrink-0">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <ThemeToggle />
-              <LanguageToggle />
-            </div>
-            <p className="text-sm font-semibold text-foreground truncate text-center flex-1">{pageTitle}</p>
-            <div className="md:invisible shrink-0">
-              <Link href="/">
-                <img src={logoPath} alt={t("logoAlt")} className="h-20 w-auto object-contain cursor-pointer" />
-              </Link>
-            </div>
-          </header>
-          <main className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0">{children}</main>
-          <MobileBottomNav />
-        </div>
+    <SidebarProvider className="h-screen overflow-hidden">
+      <AppSidebar />
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <header className="flex items-center justify-between px-3 border-b border-border bg-background shrink-0 h-[100px] gap-2">
+          <div className="flex items-center gap-1 shrink-0">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <ThemeToggle />
+            <LanguageToggle />
+          </div>
+          <p className="text-sm font-semibold text-foreground truncate text-center flex-1">{pageTitle}</p>
+          <div className="md:invisible shrink-0">
+            <Link href="/">
+              <img src={logoPath} alt={t("logoAlt")} className="h-20 w-auto object-contain cursor-pointer" />
+            </Link>
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">{children}</main>
+        <MobileBottomNav />
       </div>
     </SidebarProvider>
   );
