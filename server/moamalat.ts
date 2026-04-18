@@ -18,16 +18,36 @@ function formatTrxDateTime(): string {
   return `${yyyy}${MM}${dd}${HH}${mm}`;
 }
 
-// Compute HMAC-SHA256 over a sorted field string, using hex-decoded merchant key.
-// Returns uppercase hex.
-function computeHmac(fields: Record<string, string>, secretHex: string): string {
-  const key = Buffer.from(secretHex, "hex");
-  // Sort field names ascending
-  const queryString = Object.keys(fields)
+// Build the canonical sorted query string for HMAC input
+function buildQueryString(fields: Record<string, string>): string {
+  return Object.keys(fields)
     .sort()
     .map((k) => `${k}=${fields[k]}`)
     .join("&");
+}
+
+// Compute HMAC-SHA256, trying hex-decoded key first (as per Moamalat docs).
+// Falls back to raw UTF-8 key if the hex string is invalid.
+// Returns uppercase hex.
+function resolveKey(secretHex: string): Buffer {
+  // Always trim whitespace to protect against copy-paste errors in secrets
+  const s = secretHex.trim();
+  if (/^[0-9a-fA-F]+$/.test(s) && s.length % 2 === 0) {
+    return Buffer.from(s, "hex");
+  }
+  return Buffer.from(s, "utf8");
+}
+
+function computeHmac(fields: Record<string, string>, secretHex: string): string {
+  const queryString = buildQueryString(fields);
+  const key = resolveKey(secretHex);
   return crypto.createHmac("sha256", key).update(queryString).digest("hex").toUpperCase();
+}
+
+// Compute HMAC using key as raw UTF-8 string (for debug comparison)
+function computeHmacUtf8(fields: Record<string, string>, secret: string): string {
+  const queryString = buildQueryString(fields);
+  return crypto.createHmac("sha256", Buffer.from(secret.trim(), "utf8")).update(queryString).digest("hex").toUpperCase();
 }
 
 export function registerMoamalatRoutes(app: Express) {
@@ -59,16 +79,59 @@ export function registerMoamalatRoutes(app: Express) {
       const AmountTrxn = String(Math.round(parseFloat(amount) * 1000));
       const TrxDateTime = formatTrxDateTime();
 
+      // Moamalat MerchantReference: keep short (max ~20 chars) and alphanumeric only.
+      // Use last 12 chars of the reference passed in (appointment ID suffix).
+      const shortRef = merchantReference.replace(/[^a-zA-Z0-9]/g, "").slice(-16);
+
       // Fields used for request SecureHash (sorted ascending by key name)
       const hashFields: Record<string, string> = {
         Amount: AmountTrxn,
         DateTimeLocalTrxn: TrxDateTime,
         MerchantId: MID,
-        MerchantReference: merchantReference,
+        MerchantReference: shortRef,
         TerminalId: TID,
       };
 
       const SecureHash = computeHmac(hashFields, secretHex);
+
+      // ── Debug: compute several hash variants so we can identify the correct one ──
+      // Variant A: standard (hex-decoded key, same fields)
+      const varA = computeHmac(hashFields, secretHex);
+
+      // Variant B: utf8 key
+      const varB = computeHmacUtf8(hashFields, secretHex);
+
+      // Variant C: using the LightBox config field names instead of the hash field names
+      const hashFieldsC: Record<string, string> = {
+        AmountTrxn,
+        MID,
+        MerchantReference: shortRef,
+        TID,
+        TrxDateTime,
+      };
+      const varC = computeHmac(hashFieldsC, secretHex);
+      const varCUtf8 = computeHmacUtf8(hashFieldsC, secretHex);
+
+      // Variant D: values concatenated (no key=value, no &), sorted by key name
+      const concatHex = Object.keys(hashFields).sort().map(k => hashFields[k]).join("");
+      const concatC2hex = Object.keys(hashFieldsC).sort().map(k => (hashFieldsC as any)[k]).join("");
+      const keyHex = (/^[0-9a-fA-F]+$/.test(secretHex) && secretHex.length % 2 === 0)
+        ? Buffer.from(secretHex, "hex")
+        : Buffer.from(secretHex, "utf8");
+      const varD = crypto.createHmac("sha256", keyHex).update(concatHex).digest("hex").toUpperCase();
+      const varE = crypto.createHmac("sha256", keyHex).update(concatC2hex).digest("hex").toUpperCase();
+
+      console.log("[Moamalat] === Hash Debug Variants ===");
+      console.log("[Moamalat] Input A (standard):", buildQueryString(hashFields));
+      console.log("[Moamalat] Hash A hex-key:", varA);
+      console.log("[Moamalat] Hash B utf8-key:", varB);
+      console.log("[Moamalat] Input C (config names):", buildQueryString(hashFieldsC));
+      console.log("[Moamalat] Hash C hex-key:", varC);
+      console.log("[Moamalat] Hash C utf8-key:", varCUtf8);
+      console.log("[Moamalat] Input D (concat standard):", concatHex);
+      console.log("[Moamalat] Hash D:", varD);
+      console.log("[Moamalat] Input E (concat config names):", concatC2hex);
+      console.log("[Moamalat] Hash E:", varE);
 
       return res.json({
         success: true,
@@ -76,9 +139,22 @@ export function registerMoamalatRoutes(app: Express) {
           MID,
           TID,
           AmountTrxn,
-          MerchantReference: merchantReference,
+          MerchantReference: shortRef,
           TrxDateTime,
           SecureHash,
+        },
+        _debug: {
+          hashInputA: buildQueryString(hashFields),
+          varA_hexKey: varA,
+          varB_utf8Key: varB,
+          hashInputC: buildQueryString(hashFieldsC),
+          varC_hexKey: varC,
+          varC_utf8Key: varCUtf8,
+          concatInputD: concatHex,
+          varD,
+          concatInputE: concatC2hex,
+          varE,
+          note: "Share this with Moamalat support to identify the correct hash variant",
         },
       });
     } catch (err: any) {
