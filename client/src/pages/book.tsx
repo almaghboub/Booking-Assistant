@@ -130,7 +130,10 @@ export default function BookingPage() {
   });
 
   const bookMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/public/appointments", data),
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/public/appointments", data);
+      return res.json();
+    },
     onSuccess: async (result: any) => {
       if (result?.requiresPayment && result?.id) {
         setPendingAppointmentId(result.id);
