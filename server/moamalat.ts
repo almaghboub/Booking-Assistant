@@ -7,7 +7,7 @@ export const LIGHTBOX_SCRIPT_URL =
     ? "https://npg.moamalat.net:6006/js/lightbox.js"
     : "https://tnpg.moamalat.net:6006/js/lightbox.js";
 
-// Generate TrxDateTime in required format: yyyyMMddHHmm
+// Generate TrxDateTime in format: yyyyMMddHHmmss (14-digit with seconds)
 function formatTrxDateTime(): string {
   const now = new Date();
   const yyyy = now.getFullYear();
@@ -15,7 +15,8 @@ function formatTrxDateTime(): string {
   const dd = String(now.getDate()).padStart(2, "0");
   const HH = String(now.getHours()).padStart(2, "0");
   const mm = String(now.getMinutes()).padStart(2, "0");
-  return `${yyyy}${MM}${dd}${HH}${mm}`;
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  return `${yyyy}${MM}${dd}${HH}${mm}${ss}`;
 }
 
 // Build the canonical sorted query string for HMAC input
@@ -94,44 +95,60 @@ export function registerMoamalatRoutes(app: Express) {
 
       const SecureHash = computeHmac(hashFields, secretHex);
 
-      // ── Debug: compute several hash variants so we can identify the correct one ──
-      // Variant A: standard (hex-decoded key, same fields)
+      // ── Debug: compute all hash variants ──────────────────────────────────────
+      // Variant A: standard (hex-decoded key, fields: Amount DateTimeLocalTrxn MerchantId MerchantReference TerminalId)
       const varA = computeHmac(hashFields, secretHex);
-
-      // Variant B: utf8 key
+      // Variant B: same fields, utf8 raw key
       const varB = computeHmacUtf8(hashFields, secretHex);
 
-      // Variant C: using the LightBox config field names instead of the hash field names
-      const hashFieldsC: Record<string, string> = {
+      // Variant C: without TerminalId
+      const hashFieldsNoTid: Record<string, string> = {
+        Amount: AmountTrxn,
+        DateTimeLocalTrxn: TrxDateTime,
+        MerchantId: MID,
+        MerchantReference: shortRef,
+      };
+      const varC = computeHmac(hashFieldsNoTid, secretHex);
+
+      // Variant D: config field names (AmountTrxn MID MerchantReference TID TrxDateTime)
+      const hashFieldsConfigNames: Record<string, string> = {
         AmountTrxn,
         MID,
         MerchantReference: shortRef,
         TID,
         TrxDateTime,
       };
-      const varC = computeHmac(hashFieldsC, secretHex);
-      const varCUtf8 = computeHmacUtf8(hashFieldsC, secretHex);
+      const varD = computeHmac(hashFieldsConfigNames, secretHex);
 
-      // Variant D: values concatenated (no key=value, no &), sorted by key name
-      const concatHex = Object.keys(hashFields).sort().map(k => hashFields[k]).join("");
-      const concatC2hex = Object.keys(hashFieldsC).sort().map(k => (hashFieldsC as any)[k]).join("");
-      const keyHex = (/^[0-9a-fA-F]+$/.test(secretHex) && secretHex.length % 2 === 0)
-        ? Buffer.from(secretHex, "hex")
-        : Buffer.from(secretHex, "utf8");
-      const varD = crypto.createHmac("sha256", keyHex).update(concatHex).digest("hex").toUpperCase();
-      const varE = crypto.createHmac("sha256", keyHex).update(concatC2hex).digest("hex").toUpperCase();
+      // Variant E: amount as decimal string (e.g. "45.00") instead of smallest unit
+      const amountDecimal = parseFloat(amount).toFixed(2);
+      const hashFieldsDecimal: Record<string, string> = {
+        Amount: amountDecimal,
+        DateTimeLocalTrxn: TrxDateTime,
+        MerchantId: MID,
+        MerchantReference: shortRef,
+        TerminalId: TID,
+      };
+      const varE = computeHmac(hashFieldsDecimal, secretHex);
 
-      console.log("[Moamalat] === Hash Debug Variants ===");
-      console.log("[Moamalat] Input A (standard):", buildQueryString(hashFields));
-      console.log("[Moamalat] Hash A hex-key:", varA);
-      console.log("[Moamalat] Hash B utf8-key:", varB);
-      console.log("[Moamalat] Input C (config names):", buildQueryString(hashFieldsC));
-      console.log("[Moamalat] Hash C hex-key:", varC);
-      console.log("[Moamalat] Hash C utf8-key:", varCUtf8);
-      console.log("[Moamalat] Input D (concat standard):", concatHex);
-      console.log("[Moamalat] Hash D:", varD);
-      console.log("[Moamalat] Input E (concat config names):", concatC2hex);
-      console.log("[Moamalat] Hash E:", varE);
+      // Variant F: TID used as secret key (hex-decoded), standard fields
+      const varF = (() => {
+        try {
+          const tidKey = /^[0-9a-fA-F]+$/.test(TID) && TID.length % 2 === 0
+            ? Buffer.from(TID, "hex") : Buffer.from(TID, "utf8");
+          return crypto.createHmac("sha256", tidKey).update(buildQueryString(hashFields)).digest("hex").toUpperCase();
+        } catch { return "ERROR"; }
+      })();
+
+      console.log("[Moamalat] === Hash Debug ===");
+      console.log("[Moamalat] TrxDateTime (14-digit):", TrxDateTime);
+      console.log("[Moamalat] Input A:", buildQueryString(hashFields));
+      console.log("[Moamalat] A (hex-key):", varA);
+      console.log("[Moamalat] B (utf8-key):", varB);
+      console.log("[Moamalat] C (no TerminalId):", varC, " input:", buildQueryString(hashFieldsNoTid));
+      console.log("[Moamalat] D (config-names):", varD);
+      console.log("[Moamalat] E (decimal amt):", varE, " amount:", amountDecimal);
+      console.log("[Moamalat] F (TID as key):", varF);
 
       return res.json({
         success: true,
@@ -144,17 +161,15 @@ export function registerMoamalatRoutes(app: Express) {
           SecureHash,
         },
         _debug: {
+          trxDateTime: TrxDateTime,
           hashInputA: buildQueryString(hashFields),
           varA_hexKey: varA,
           varB_utf8Key: varB,
-          hashInputC: buildQueryString(hashFieldsC),
-          varC_hexKey: varC,
-          varC_utf8Key: varCUtf8,
-          concatInputD: concatHex,
-          varD,
-          concatInputE: concatC2hex,
-          varE,
-          note: "Share this with Moamalat support to identify the correct hash variant",
+          varC_noTerminalId: varC,
+          varD_configNames: varD,
+          varE_decimalAmount: varE,
+          varF_tidAsKey: varF,
+          note: "Share with Moamalat support — ask which SecureHash is correct for hashInputA",
         },
       });
     } catch (err: any) {
